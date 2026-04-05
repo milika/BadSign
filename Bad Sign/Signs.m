@@ -32,7 +32,7 @@ float kepler( float m, float ecc ){
     e -= delta / ( 1.0f - ecc * cos(e) );
     
     // loop
-    while( abs(delta) > EPSILON ){
+    while( fabsf(delta) > EPSILON ){
         delta = e - ecc * sin(e) - m;
         e -= delta / ( 1.0f - ecc * cos(e) );
     }
@@ -344,7 +344,7 @@ void equ2ecl(float ra, float dc, float ob)
     // document.display.npmoon.value = lon2dmsz(l);
     
     // extract the sign
-    float x = abs(l);
+    float x = fabsf(l);
     d = floor(x);
     m = (x - d);
     s = m * 60;
@@ -395,7 +395,7 @@ float wSolst (float ys, float chTZ)
     PE = .00134 * fncs(22518.7541 * t + 153);
     PE = PE + .00154 * fncs(45037.5082 * t + 217) + .002 * fncs(32964.3577 * t + 313) + .00178 * fnsn(20.2 * t + 231);
     DT = 1;
-    while (abs(DT * 36525) > .001) {
+    while (fabsf(DT * 36525) > .001) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
         L = L + (1.91946 - .004789 * t - .000014 * t * t) * fnsn(m) + (.020094 - .0001 * t) * fnsn(2 * m) + .000293 * fnsn(3 * m);
@@ -418,7 +418,7 @@ float solTerm (float y, float chTZ, float LO) {
     PE = .00134 * fncs(22518.7541 * t + 153);
     PE = PE + .00154 * fncs(45037.5082 * t + 217) + .002 * fncs(32964.3577 * t + 313) + .00178 * fnsn(20.2 * t + 231);
     DT = 1;
-    while (abs(DT * 36525) > .001) {
+    while (fabsf(DT * 36525) > .001) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
         L = L + (1.91946 - .004789 * t - .000014 * t * t) * fnsn(m) + (.020094 - .0001 * t) * fnsn(2 * m) + .000293 * fnsn(3 * m);

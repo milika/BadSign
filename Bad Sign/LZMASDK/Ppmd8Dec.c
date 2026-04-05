@@ -32,8 +32,11 @@ static void RangeDec_Decode(CPpmd8 *p, UInt32 start, UInt32 size)
   p->Code -= start;
   p->Range *= size;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomma"
   while ((p->Low ^ (p->Low + p->Range)) < kTop ||
       (p->Range < kBot && ((p->Range = (0 - p->Low) & (kBot - 1)), 1)))
+#pragma clang diagnostic pop
   {
     p->Code = (p->Code << 8) | p->Stream.In->Read(p->Stream.In);
     p->Range <<= 8;

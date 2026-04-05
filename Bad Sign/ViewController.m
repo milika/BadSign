@@ -205,10 +205,12 @@ int old_rowSelected;
                // NSLog(@"%@%@",@"Failed to open url:",[url description]);
             }
             */
-            if (![[UIApplication sharedApplication] openURL: url]) {
+            if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+            } else {
                 //fanPageURL failed to open.  Open the website in Safari instead
                 NSURL *webURL = [NSURL URLWithString:@"https://m.facebook.com/VoidSoftware"];
-                [[UIApplication sharedApplication] openURL: webURL];
+                [[UIApplication sharedApplication] openURL:webURL options:@{} completionHandler:nil];
             }
         } else {
         
@@ -263,7 +265,7 @@ int old_rowSelected;
         activityViewController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
         [activityViewController setValue:@"Bad Sign" forKey:@"subject"]; // email subject
         
-        [activityViewController setCompletionHandler:^(NSString *act, BOOL done)
+        activityViewController.completionWithItemsHandler = ^(UIActivityType act, BOOL done, NSArray *returnedItems, NSError *activityError)
          {
              
              /*
@@ -282,7 +284,7 @@ int old_rowSelected;
              {
                  // didn't succeed.
              }
-         }];
+         };
         
         [self presentViewController:activityViewController animated:YES completion:nil];
         
@@ -1093,7 +1095,7 @@ int old_rowSelected;
             } else {
                 NSString *result = [webView2 stringByEvaluatingJavaScriptFromString:@"document.body.offsetHeight;"];
                 
-                int height = [result integerValue];
+                int height = (int)[result integerValue];
                 
                 CGRect f = webView2.frame;
                 f.size.height = height;

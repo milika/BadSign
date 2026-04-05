@@ -256,7 +256,7 @@ UITapGestureRecognizer * backTap;
     // [Flurry setDebugLogEnabled:YES];
     
     // rate count
-    uses_count = [[NSUserDefaults standardUserDefaults] integerForKey:@"uses_count"];
+    uses_count = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@"uses_count"];
     NSLog(@"uses_count %i",uses_count);
     
     return YES;
@@ -644,38 +644,23 @@ UITapGestureRecognizer * backTap;
         // count used times
         uses_count++;
         
+#define YOUR_APP_STORE_ID 912176242 //Change this one to your ID
         if (uses_count > 4)
         {
             uses_count = -99;
             
-            UIAlertView * alert =[[UIAlertView alloc ] initWithTitle:@"Rate Bad Sing"
-                                                             message:@"Please rate our app, ratings are the only way we can interact with users and we depend on them greatly..."
-                                                            delegate:self
-                                                   cancelButtonTitle:@"Noooo"
-                                                   otherButtonTitles: @"Rate App",nil];
-            [alert show];
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Rate Bad Sing"
+                                                                           message:@"Please rate our app, ratings are the only way we can interact with users and we depend on them greatly..."
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"Noooo" style:UIAlertActionStyleCancel handler:nil]];
+            [alert addAction:[UIAlertAction actionWithTitle:@"Rate App" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                NSString *storeURLFormat = @"itms-apps://itunes.apple.com/app/id%d";
+                NSURL *theUrl = [NSURL URLWithString:[NSString stringWithFormat:storeURLFormat, YOUR_APP_STORE_ID]];
+                [[UIApplication sharedApplication] openURL:theUrl options:@{} completionHandler:nil];
+            }]];
+            [navController presentViewController:alert animated:YES completion:nil];
         }
         
-    }
-}
-
-#define YOUR_APP_STORE_ID 912176242 //Change this one to your ID
-
-- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
-{
-    // NSLog(@"Button Index =%ld",(long)buttonIndex);
-    if (buttonIndex == 1) {
-        //  [Flurry logEvent:@"Rate"];
-        
-        // Rate
-        NSString * iOS7AppStoreURLFormat = @"itms-apps://itunes.apple.com/app/id%d";
-        NSString * iOSAppStoreURLFormat = @"itms-apps://itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?type=Purple+Software&id=%d";
-        
-        NSURL * theUrl = [NSURL URLWithString:[NSString stringWithFormat:([[UIDevice currentDevice].systemVersion floatValue] >= 7.0f)? iOS7AppStoreURLFormat: iOSAppStoreURLFormat, YOUR_APP_STORE_ID]]; // Would contain the right link
-        
-        // NSLog(@"url %@",theUrl);
-        
-        [[UIApplication sharedApplication] openURL:theUrl];
     }
 }
 
