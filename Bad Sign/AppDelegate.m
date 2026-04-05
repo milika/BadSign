@@ -9,18 +9,47 @@
 #import "AppDelegate.h"
 #import "ViewController.h"
 #import "Signs.h"
+#import "LZMAExtractor.h"
 
 
 
 
 @implementation AppDelegate
 
-
-
 UITapGestureRecognizer * backTap;
+
++ (NSString *)archiveCacheDir {
+    NSString *appSupport = [NSSearchPathForDirectoriesInDomains(
+        NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
+    return [appSupport stringByAppendingPathComponent:@"arch"];
+}
+
++ (void)ensureArchiveExtracted {
+    NSString *cacheDir = [AppDelegate archiveCacheDir];
+    NSString *sentinelPath = [cacheDir stringByAppendingPathComponent:@".done"];
+    NSFileManager *fm = [NSFileManager defaultManager];
+
+    if ([fm fileExistsAtPath:sentinelPath]) return; // already extracted
+
+    NSString *archivePath = [[NSBundle mainBundle] pathForResource:@"arch" ofType:@"7z"];
+    if (!archivePath) { NSLog(@"[ARCH] arch.7z not found in bundle"); return; }
+
+    [fm createDirectoryAtPath:cacheDir withIntermediateDirectories:YES attributes:nil error:nil];
+    [LZMAExtractor extract7zArchive:archivePath dirName:cacheDir preserveDir:NO];
+
+    NSError *err = nil;
+    [@"1" writeToFile:sentinelPath atomically:YES encoding:NSUTF8StringEncoding error:&err];
+    NSLog(@"[ARCH] Archive extracted to %@", cacheDir);
+}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    // Pre-extract arch.7z to Application Support once so subsequent sign
+    // calculations read from disk (no LZMA decompression cost).
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [AppDelegate ensureArchiveExtracted];
+    });
+
     // iOS7 = [[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0;
     //  size4Inch =[[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone && [UIScreen mainScreen].bounds.size.height == 568.0;
     

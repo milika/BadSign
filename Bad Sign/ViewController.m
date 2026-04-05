@@ -95,77 +95,28 @@ int old_rowSelected;
 
 - (NSString*) getHtml7z:(NSString*) fileName
 {
-   // NSLog(@"getHtml7z %@", fileName);
-    
-    BOOL worked;
-    
-    NSString *archiveFilename = @"arch.7z";
-    NSString *archiveResPath = [[NSBundle mainBundle] pathForResource:archiveFilename ofType:nil];
-    NSAssert(archiveResPath, @"can't find arch.7z");
-    
-    // Extract single entry "make.out" and save it as "tmp/make.out.txt" in the tmp dir.
-    
-    NSString *entryFilename = fileName;
-	NSString *makeTmpFilename = @"7z.html";
-	NSString *makeTmpPath = [NSTemporaryDirectory() stringByAppendingPathComponent:makeTmpFilename];
-    
-    worked = [LZMAExtractor extractArchiveEntry:archiveResPath
-                                   archiveEntry:entryFilename
-                                        outPath:makeTmpPath];
-    NSString *outStr = nil;
-    if (worked) {
-        //NSLog(@"%@", makeTmpPath);
-        
-        NSData *outputData = [NSData dataWithContentsOfFile:makeTmpPath];
-        outStr = [[NSString alloc] initWithData:outputData encoding:NSUTF8StringEncoding];
-    }
-    
-   // NSLog(@"DONE getHtml7z");
-    
-    return outStr;
+    // Files are bundled directly — no decompression needed
+    NSString *name = [fileName stringByDeletingPathExtension];
+    NSString *path = [[NSBundle mainBundle] pathForResource:name ofType:@"html"
+                                               inDirectory:@"SignAssets"];
+    if (!path) return nil;
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
 - (void) getPng7z:(NSString*) fileName out:(NSString*) fileNameOut
 {
-    // NSLog(@"getPng7z %@", fileName);
-    
-    BOOL /*worked,*/ worked2;
-    
-    NSString *archiveFilename = @"arch.7z";
-    NSString *archiveResPath = [[NSBundle mainBundle] pathForResource:archiveFilename ofType:nil];
-    NSAssert(archiveResPath, @"can't find arch.7z");
-    
-    /*
-     // Extract single entry "make.out" and save it as "tmp/make.out.txt" in the tmp dir.
-     NSString *entryFilename = [NSString stringWithFormat:@"%@.png",fileName];
-     NSLog(@"%@", entryFilename);
-     NSString *makeTmpFilename = [NSString stringWithFormat:@"%@.png",fileNameOut];
-     NSString *makeTmpPath = [NSTemporaryDirectory() stringByAppendingPathComponent:makeTmpFilename];
-     
-     worked = [LZMAExtractor extractArchiveEntry:archiveResPath
-     archiveEntry:entryFilename
-     outPath:makeTmpPath];
-     */
-    
-    NSString * entryFilename = [NSString stringWithFormat:@"%@@2x.png",fileName];
-    // NSLog(@"%@", entryFilename);
-	NSString * makeTmpFilename = [NSString stringWithFormat:@"%@@2x.png",fileNameOut];
-	NSString *makeTmpPath2 = [NSTemporaryDirectory() stringByAppendingPathComponent:makeTmpFilename];
-    
-    worked2 = [LZMAExtractor extractArchiveEntry:archiveResPath
-                                    archiveEntry:entryFilename
-                                         outPath:makeTmpPath2];
-    
-    //UIImage* ret = nil;
-    //    if (worked2) {
-    // NSLog(@"%@", makeTmpPath2);
-    //NSData *outputData = [NSData dataWithContentsOfFile:makeTmpPath2];
-    //ret = [UIImage imageWithData:outputData scale:2.0];
-    //  }
-    
-    // NSLog(@"DONE getPng7z");
-    
-    // return ret;
+    // Files are bundled directly — just copy to tmp so existing image-loading code works
+    NSString *srcName  = [NSString stringWithFormat:@"%@@2x", fileName];
+    NSString *bundlePath = [[NSBundle mainBundle] pathForResource:srcName ofType:@"png"
+                                                     inDirectory:@"SignAssets"];
+    if (!bundlePath) return;
+
+    NSString *destPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                          [NSString stringWithFormat:@"%@@2x.png", fileNameOut]];
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if ([fm fileExistsAtPath:destPath]) [fm removeItemAtPath:destPath error:nil];
+    [fm copyItemAtPath:bundlePath toPath:destPath error:nil];
 }
 
 
