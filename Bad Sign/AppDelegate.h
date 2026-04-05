@@ -61,7 +61,4 @@ static NSString * const kAppStoreID      = @"912176242";
 
 -(void) hidePickers;
 
-// Returns the directory where arch.7z is pre-extracted at first launch.
-+ (NSString *)archiveCacheDir;
-
 @end
