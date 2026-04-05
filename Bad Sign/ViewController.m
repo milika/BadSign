@@ -295,11 +295,18 @@ int old_rowSelected;
 
 -(UIImage*) getBandImage:(int) bandIndex
 {
-    NSIndexPath * indexPath =[NSIndexPath indexPathForRow:bandIndex inSection:0];
-    [tableView scrollToRowAtIndexPath:indexPath atScrollPosition:UITableViewScrollPositionTop animated:NO];
-    UITableViewCell *cell =  [tableView cellForRowAtIndexPath:indexPath];
-    UIImage * titleImg = [self imageOfView:cell];
-    
+    __block UIImage *titleImg = nil;
+    dispatch_block_t block = ^{
+        NSIndexPath * indexPath = [NSIndexPath indexPathForRow:bandIndex inSection:0];
+        [tableView scrollToRowAtIndexPath:indexPath atScrollPosition:UITableViewScrollPositionTop animated:NO];
+        UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+        titleImg = [self imageOfView:cell];
+    };
+    if ([NSThread isMainThread]) {
+        block();
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), block);
+    }
     return titleImg;
 }
 
@@ -540,19 +547,23 @@ int old_rowSelected;
         // calculated horospe indexes
         horData = [[NSMutableArray alloc] init];
         htmlData = [[NSMutableArray alloc] init];
+        webHeights = [[NSMutableArray alloc] init];
         for (int i=0; i<[tableSections count]; i++) {
             NSMutableArray * secNumArr = [[NSMutableArray alloc] init];
             NSMutableArray * secHtmlArr = [[NSMutableArray alloc] init];
+            NSMutableArray * secHeightsArr = [[NSMutableArray alloc] init];
             
             NSMutableArray * secArr = [tableData objectAtIndex:i];
             for (int a=0; a<[secArr count]; a++) {
                 NSNumber * num = [NSNumber numberWithInt:0];
                 [secNumArr addObject:num];
                 [secHtmlArr addObject:@""];
+                [secHeightsArr addObject:@(0.0)];
             }
             
             [horData addObject:secNumArr];
             [htmlData addObject:secHtmlArr];
+            [webHeights addObject:secHeightsArr];
         }
         
         // iad
@@ -668,11 +679,14 @@ int old_rowSelected;
         dispatch_async(dispatch_get_main_queue(), ^{
             NSLog(@"[DIAG] Phase 3 main thread start");
             NSMutableArray *secHtmlArr = [htmlData objectAtIndex:0];
+            NSMutableArray *secHeightsArr = [webHeights objectAtIndex:0];
             for (int i = 0; i < 12; i++) {
                 int idx = [signIndices[i] intValue];
                 [secNumArr replaceObjectAtIndex:i withObject:@(idx)];
                 // Store HTML for lazy loading — do NOT create WKWebViews here
                 [secHtmlArr replaceObjectAtIndex:i withObject:htmlStrings[i]];
+                // Reset cached height — content is new
+                [secHeightsArr replaceObjectAtIndex:i withObject:@(0.0)];
                 // Remove any previously loaded WebView to free its process
                 UITableViewCell *cell = [[webViews objectAtIndex:0] objectAtIndex:i];
                 WKWebView *webView = (WKWebView*)[cell viewWithTag:1001];
@@ -861,18 +875,45 @@ int old_rowSelected;
 - (void)webView:(WKWebView *)webViewArg didFinishNavigation:(null_unspecified WKNavigation *)navigation
 {
     NSString *currentURL = webViewArg.URL.absoluteString;
-    
-    if ([currentURL isEqualToString:@"about:blank"]) {
-        return;
-    }
-    
-    
-    CGRect oldBounds = [webViewArg bounds];
-    //in the document you can use your string ... ans set the height
-    CGFloat height = [[webViewArg stringByEvaluatingJavaScriptFromString:@"document.height"] floatValue];
-    CGRect bounds = CGRectMake(oldBounds.origin.x, oldBounds.origin.y, oldBounds.size.width, height);
-    [webViewArg setBounds:bounds];
-    [webViewArg setFrame:bounds];
+    if ([currentURL isEqualToString:@"about:blank"]) return;
+    if (rowSelected < 0) return;
+
+    // Capture row/section at callback time to guard against state change
+    int capturedRow = rowSelected;
+    int capturedSec = secSelected;
+
+    // Async height — never spins the run loop, preventing UITableView reentrancy
+    [webViewArg evaluateJavaScript:@"document.body.scrollHeight"
+                 completionHandler:^(id result, NSError *error) {
+        if (error || !result) return;
+        CGFloat height = [result floatValue];
+        if (height <= 0) return;
+        // Guard: still showing same row
+        if (rowSelected != capturedRow || secSelected != capturedSec) return;
+
+        // Cache the height
+        [[webHeights objectAtIndex:capturedSec] replaceObjectAtIndex:capturedRow withObject:@(height)];
+
+        // Resize the webView
+        CGRect frame = webViewArg.frame;
+        frame.size.height = height;
+        [webViewArg setFrame:frame];
+
+        // Move the social band to sit below the content
+        UITableViewCell *webCell = [[webViews objectAtIndex:capturedSec] objectAtIndex:capturedRow];
+        UIView *socialView = [webCell viewWithTag:1007];
+        if (socialView) {
+            CGRect sR = socialView.frame;
+            sR.origin.y = height;
+            socialView.frame = sR;
+        }
+
+        // Animate the row height change
+        if (tableView) {
+            [tableView beginUpdates];
+            [tableView endUpdates];
+        }
+    }];
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath;
@@ -884,23 +925,14 @@ int old_rowSelected;
             //return webCell.frame.size.height;
             
             WKWebView * webView2 = (WKWebView*)[webCell viewWithTag:1001];
-            //NSString *currentURL = webView2.request.URL.absoluteString;
             if (webView2 == nil) {
-                return 50.0;
+                return 50.0 + 55.0;
             } else {
-                NSString *result = [webView2 stringByEvaluatingJavaScriptFromString:@"document.body.offsetHeight;"];
-                
-                int height = (int)[result integerValue];
-                
-                CGRect f = webView2.frame;
-                f.size.height = height;
-                webView2.frame = f;
-                
-               // NSLog(@"web size: %i", height);
-                return height+55.0;
-
-//                NSLog(@"web size: %f", webView2.bounds.size.height);
-  //              return webView2.frame.size.height+55.0;
+                // Use the cached height set by didFinishNavigation (async, no runloop spin)
+                NSNumber *cached = [[webHeights objectAtIndex:secSelected] objectAtIndex:rowSelected];
+                CGFloat height = [cached floatValue];
+                if (height <= 0) return 50.0 + 55.0;
+                return height + 55.0;
             }
             
         } else {

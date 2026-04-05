@@ -31,6 +31,9 @@
     // HTML content for each sign (lazily loaded into WebViews on demand)
     NSMutableArray * htmlData;
     
+    // Cached content heights for each sign's web cell
+    NSMutableArray * webHeights;
+    
     NSDate * last_birthday;
     
     UITableView* tw;
