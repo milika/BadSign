@@ -28,6 +28,9 @@
     // Horoscopes index
     NSMutableArray * horData;
     
+    // HTML content for each sign (lazily loaded into WebViews on demand)
+    NSMutableArray * htmlData;
+    
     NSDate * last_birthday;
     
     UITableView* tw;

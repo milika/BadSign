@@ -397,7 +397,7 @@ float wSolst (float ys, float chTZ)
     DT = 1;
     int wSolst_iter = 0;
     NSLog(@"[DIAG] wSolst enter ys=%.0f t=%.6f", ys, t);
-    while (fabsf(DT * 36525) > .001) {
+    while (fabsf(DT * 36525) > .01) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
         L = L + (1.91946 - .004789 * t - .000014 * t * t) * fnsn(m) + (.020094 - .0001 * t) * fnsn(2 * m) + .000293 * fnsn(3 * m);
@@ -428,7 +428,7 @@ float solTerm (float y, float chTZ, float LO) {
     DT = 1;
     int solTerm_iter = 0;
     NSLog(@"[DIAG] solTerm enter y=%.0f LO=%.0f t=%.6f", y, LO, t);
-    while (fabsf(DT * 36525) > .001) {
+    while (fabsf(DT * 36525) > .01) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
         L = L + (1.91946 - .004789 * t - .000014 * t * t) * fnsn(m) + (.020094 - .0001 * t) * fnsn(2 * m) + .000293 * fnsn(3 * m);

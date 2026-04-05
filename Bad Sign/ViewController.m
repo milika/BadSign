@@ -539,16 +539,20 @@ int old_rowSelected;
         
         // calculated horospe indexes
         horData = [[NSMutableArray alloc] init];
+        htmlData = [[NSMutableArray alloc] init];
         for (int i=0; i<[tableSections count]; i++) {
             NSMutableArray * secNumArr = [[NSMutableArray alloc] init];
+            NSMutableArray * secHtmlArr = [[NSMutableArray alloc] init];
             
             NSMutableArray * secArr = [tableData objectAtIndex:i];
             for (int a=0; a<[secArr count]; a++) {
                 NSNumber * num = [NSNumber numberWithInt:0];
                 [secNumArr addObject:num];
+                [secHtmlArr addObject:@""];
             }
             
             [horData addObject:secNumArr];
+            [htmlData addObject:secHtmlArr];
         }
         
         // iad
@@ -565,6 +569,16 @@ int old_rowSelected;
     return self;
 }
 
+-(void) releaseExpandedWebView
+{
+    // Remove the WKWebView from the previously-expanded web cell to free its process.
+    if (old_rowSelected >= 0) {
+        UITableViewCell *webCell = [[webViews objectAtIndex:secSelected] objectAtIndex:old_rowSelected];
+        WKWebView *wv = (WKWebView*)[webCell viewWithTag:1001];
+        [wv removeFromSuperview];
+    }
+}
+
 -(void) closeCells
 {
     // close if opened
@@ -573,15 +587,16 @@ int old_rowSelected;
         
         [tableView beginUpdates];
         
-        // close
-        
-        // delete webview
+        // delete webview row from table
         NSArray * delArr = [NSArray arrayWithObjects:[NSIndexPath indexPathForRow:old_rowSelected+1 inSection:secSelected], nil];
         [tableView deleteRowsAtIndexPaths:delArr withRowAnimation:UITableViewRowAnimationNone];
         
         rowSelected = -99;
         
         [tableView endUpdates];
+        
+        // Free the WKWebView process — it's no longer visible
+        [self releaseExpandedWebView];
     }
 }
 
@@ -652,15 +667,16 @@ int old_rowSelected;
         // Phase 3: all UIKit work back on the main thread
         dispatch_async(dispatch_get_main_queue(), ^{
             NSLog(@"[DIAG] Phase 3 main thread start");
+            NSMutableArray *secHtmlArr = [htmlData objectAtIndex:0];
             for (int i = 0; i < 12; i++) {
                 int idx = [signIndices[i] intValue];
                 [secNumArr replaceObjectAtIndex:i withObject:@(idx)];
+                // Store HTML for lazy loading — do NOT create WKWebViews here
+                [secHtmlArr replaceObjectAtIndex:i withObject:htmlStrings[i]];
+                // Remove any previously loaded WebView to free its process
                 UITableViewCell *cell = [[webViews objectAtIndex:0] objectAtIndex:i];
                 WKWebView *webView = (WKWebView*)[cell viewWithTag:1001];
                 [webView removeFromSuperview];
-                webView = [self defWV];
-                [webView loadHTMLString:htmlStrings[i] baseURL:url];
-                [cell addSubview:webView];
             }
             NSLog(@"[DIAG] Phase 3 reloadData");
             [tableView reloadData];
@@ -799,9 +815,19 @@ int old_rowSelected;
     
     if ((rowSelected >= 0) && (secSelected == indexPath.section)) {
         if (indexPath.row == (rowSelected+1)) {
-            // webView
+            // webView — create lazily, only for the currently expanded row
             cell = [[webViews objectAtIndex:secSelected] objectAtIndex:rowSelected];
             WKWebView * webView = (WKWebView*)[cell viewWithTag:1001];
+
+            // Create the WebView on demand if not yet present
+            if (webView == nil) {
+                NSURL *url = [[NSBundle mainBundle] bundleURL];
+                NSString *html = [[htmlData objectAtIndex:secSelected] objectAtIndex:rowSelected];
+                webView = [self defWV];
+                [webView loadHTMLString:html baseURL:url];
+                [cell addSubview:webView];
+            }
+
             UIView * socialView = [cell viewWithTag:1007];
             // recreate socialView
             if (socialView != nil)
@@ -918,11 +944,14 @@ int old_rowSelected;
         // NSLog(@"close select");
         // close
         
-        // delete webview
+        // delete webview row
         NSArray * delArr = [NSArray arrayWithObjects:[NSIndexPath indexPathForRow:old_rowSelected+1 inSection:secSelected], nil];
         [tableViewPar deleteRowsAtIndexPaths:delArr withRowAnimation:UITableViewRowAnimationTop];
         
         rowSelected = -99;
+        
+        // Free the WKWebView process — row is no longer visible
+        [self releaseExpandedWebView];
         
     } else if (rowSelected < 0) {
         // NSLog(@"new select");
@@ -947,9 +976,12 @@ int old_rowSelected;
     } else {
         // switch select
         
-        // delete webview
+        // delete webview row
         NSArray * delArr = [NSArray arrayWithObjects:[NSIndexPath indexPathForRow:old_rowSelected+1 inSection:secSelected], nil];
         [tableViewPar deleteRowsAtIndexPaths:delArr withRowAnimation:UITableViewRowAnimationTop];
+        
+        // Free the previous WKWebView process before opening a new one
+        [self releaseExpandedWebView];
         
         // new select
         rowSelected = (int)indexPath.row;
