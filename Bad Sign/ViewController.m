@@ -596,307 +596,64 @@ int old_rowSelected;
     
     [self closeCells];
     
-    UITableViewCell * cell = nil;
-    WKWebView * webView = nil;
-    // UIView* socialBandView = nil;
-    
-    NSMutableArray * secNumArr = [horData objectAtIndex:0];
-    
     last_birthday = birthday;
-    
-    Signs * signs = [[Signs alloc] initWithDate:birthday];
-    
-    NSNumber * num = nil;
-    
-    NSURL *url= [[NSBundle mainBundle] bundleURL];
-    
-    int bs_calc = 0;
-    
-    // western horoscope
-    num = [NSNumber numberWithInt:[signs westernSign]];
-    if (num != nil) {
-        NSLog(@"westernSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"0-%i",[num intValue]] out:@"0"];
-        
-        [secNumArr replaceObjectAtIndex:0 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:0];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        
-        
-        NSString * html =  [self getHtml7z:[NSString stringWithFormat:@"0-%i.html",[num intValue]]];
-        html = [html stringByReplacingOccurrencesOfString:@"<meta content=”width=320; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;”/>" withString:@"<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' />"];
-        [webView loadHTMLString:html baseURL:url];
-        
-        
-        //[webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"0-%i",[num intValue]] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    // Chinesse
-    num = [NSNumber numberWithInt:[signs chineseSign]];
-    if (num != nil) {
-        NSLog(@"chineseSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"1-%i",[num intValue]] out:@"1"];
-        
-        [secNumArr replaceObjectAtIndex:1 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:1];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"1-%i.html",[num intValue]]] baseURL:url];
-        
-        //        [webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"1-%i",[num intValue]] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    
-    // Aztec
-    num = [NSNumber numberWithInt:[signs aztecSign]];
-    if (num != nil) {
-        NSLog(@"aztecSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"2-%i",[num intValue]] out:@"2"];
-        
-        [secNumArr replaceObjectAtIndex:2 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:2];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"2-%i.html",[num intValue]]] baseURL:url];
-        
-        //        [webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"2-%i",[num intValue]] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    // Maya
-    num = [NSNumber numberWithInt:[signs mayanSign]];
-    if (num != nil) {
-        NSLog(@"mayanSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"3-%i",[num intValue]] out:@"3"];
-        
-        [secNumArr replaceObjectAtIndex:3 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:3];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"3-%i.html",[num intValue]]] baseURL:url];
-        
-        //        [webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"3-%i",[num intValue]] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    // Egyptian
-    num = [NSNumber numberWithInt:[signs egyptianSign]];
-    if (num != nil) {
-        NSLog(@"egyptianSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"4-%i",[num intValue]] out:@"4"];
-        
-        [secNumArr replaceObjectAtIndex:4 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:4];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"4-%i.html",[num intValue]]] baseURL:url];
-        
-        //        [webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"4-%i",[num intValue]] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    // Zoroasto
-    num = [NSNumber numberWithInt:[signs zoroastoSign]];
-    if (num != nil) {
-        NSLog(@"zoroastoSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"5-%i",[num intValue]] out:@"5"];
-        
-        [secNumArr replaceObjectAtIndex:5 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:5];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"5-%i.html",[num intValue]]] baseURL:url];
-        //[webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"5-%i",[num intValue]] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    // Celtic
-    num = [NSNumber numberWithInt:[signs celticSign]];
-    if (num != nil) {
-        NSLog(@"celticSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"6-%i",[num intValue]] out:@"6"];
-        
-        [secNumArr replaceObjectAtIndex:6 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:6];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"6-%i.html",[num intValue]]] baseURL:url];
-        //[webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"6-%i",0/*[num intValue]*/] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    // Norse
-    num = [NSNumber numberWithInt:[signs norseSign]];
-    if (num != nil) {
-        NSLog(@"norseSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"7-%i",[num intValue]] out:@"7"];
-        
-        [secNumArr replaceObjectAtIndex:7 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:7];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"7-%i.html",[num intValue]]] baseURL:url];
-        //[webView loadRequest:[NSURLRequest requestWithURL:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:[NSString stringWithFormat:@"7-%i",0/*[num intValue]*/] ofType:@"html"] isDirectory:NO]]];
-        [cell addSubview:webView];
-        
-    }
-    
-    
-    // Slavic
-    num = [NSNumber numberWithInt:[signs slavicSign]];
-    if (num != nil) {
-        NSLog(@"slavicSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"8-%i",[num intValue]] out:@"8"];
-        
-        [secNumArr replaceObjectAtIndex:8 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:8];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"8-%i.html",[num intValue]]] baseURL:url];
-        [cell addSubview:webView];
-        
-    }
 
-    
-    // Numeology
-    num = [NSNumber numberWithInt:[signs numerologySign]];
-    if (num != nil) {
-        NSLog(@"numerologySign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"9-%i",[num intValue]] out:@"9"];
-        
-        [secNumArr replaceObjectAtIndex:9 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:9];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"9-%i.html",[num intValue]]] baseURL:url];
-        [cell addSubview:webView];
-    }
-    
-    // Geek
-    num = [NSNumber numberWithInt:[signs geekSign]];
-    if (num != nil) {
-        NSLog(@"geekSign %i",[num intValue]);
-        
-        bs_calc+=[num intValue];
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"10-%i",[num intValue]] out:@"10"];
-        
-        [secNumArr replaceObjectAtIndex:10 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:10];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"10-%i.html",[num intValue]]] baseURL:url];
-        [cell addSubview:webView];
-    }
-    
-    // Bad Sign
-    num = [NSNumber numberWithInt:bs_calc % 12];
-    if (num != nil) {
-        // num = @9; // Villa
-         NSLog(@"badSign %i",[num intValue]);
-        
-        // img
-        [self getPng7z:[NSString stringWithFormat:@"11-%i",[num intValue]] out:@"11"];
-        
-        [secNumArr replaceObjectAtIndex:11 withObject:num];
-        cell = [[webViews objectAtIndex:0] objectAtIndex:11];
-        webView = (WKWebView*)[cell viewWithTag:1001];
-        [webView removeFromSuperview];
-        
-        // create new wv
-        webView = [self defWV];
-        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"11-%i.html",[num intValue]]] baseURL:url];
-//        [webView loadHTMLString:[self getHtml7z:[NSString stringWithFormat:@"help.html"]] baseURL:url];
-        
-        [cell addSubview:webView];
-    }
-    
-    // Refresh table
-    [tableView reloadData];
+    Signs * signs = [[Signs alloc] initWithDate:birthday];
+
+    // Phase 1: calculate all sign indices (fast math, no I/O - stays on main thread)
+    int bs_calc = 0;
+    int s0  = [signs westernSign];    NSLog(@"westernSign %i",   s0);  bs_calc += s0;
+    int s1  = [signs chineseSign];    NSLog(@"chineseSign %i",   s1);  bs_calc += s1;
+    int s2  = [signs aztecSign];      NSLog(@"aztecSign %i",     s2);  bs_calc += s2;
+    int s3  = [signs mayanSign];      NSLog(@"mayanSign %i",     s3);  bs_calc += s3;
+    int s4  = [signs egyptianSign];   NSLog(@"egyptianSign %i",  s4);  bs_calc += s4;
+    int s5  = [signs zoroastoSign];   NSLog(@"zoroastoSign %i",  s5);  bs_calc += s5;
+    int s6  = [signs celticSign];     NSLog(@"celticSign %i",    s6);  bs_calc += s6;
+    int s7  = [signs norseSign];      NSLog(@"norseSign %i",     s7);  bs_calc += s7;
+    int s8  = [signs slavicSign];     NSLog(@"slavicSign %i",    s8);  bs_calc += s8;
+    int s9  = [signs numerologySign]; NSLog(@"numerologySign %i",s9);  bs_calc += s9;
+    int s10 = [signs geekSign];       NSLog(@"geekSign %i",      s10); bs_calc += s10;
+    int s11 = bs_calc % 12;           NSLog(@"badSign %i",       s11);
+
+    NSArray<NSNumber*> *signIndices = @[@(s0),@(s1),@(s2),@(s3),@(s4),@(s5),
+                                        @(s6),@(s7),@(s8),@(s9),@(s10),@(s11)];
+
+    NSURL *url = [[NSBundle mainBundle] bundleURL];
+    NSMutableArray *secNumArr = [horData objectAtIndex:0];
+
+    // Phase 2: heavy LZMA extraction on a background thread so the main thread stays free
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+
+        NSMutableArray<NSString*> *htmlStrings = [NSMutableArray arrayWithCapacity:12];
+
+        for (int i = 0; i < 12; i++) {
+            int idx = [signIndices[i] intValue];
+            [self getPng7z:[NSString stringWithFormat:@"%i-%i", i, idx]
+                       out:[NSString stringWithFormat:@"%i", i]];
+            NSString *html = [self getHtml7z:[NSString stringWithFormat:@"%i-%i.html", i, idx]];
+            if (i == 0 && html != nil) {
+                // fix viewport meta for western sign
+                html = [html stringByReplacingOccurrencesOfString:@"<meta content=”width=320; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;”/>"
+                                                       withString:@"<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' />"];
+            }
+            [htmlStrings addObject:(html != nil ? html : @"")];
+        }
+
+        // Phase 3: all UIKit work back on the main thread
+        dispatch_async(dispatch_get_main_queue(), ^{
+            for (int i = 0; i < 12; i++) {
+                int idx = [signIndices[i] intValue];
+                [secNumArr replaceObjectAtIndex:i withObject:@(idx)];
+                UITableViewCell *cell = [[webViews objectAtIndex:0] objectAtIndex:i];
+                WKWebView *webView = (WKWebView*)[cell viewWithTag:1001];
+                [webView removeFromSuperview];
+                webView = [self defWV];
+                [webView loadHTMLString:htmlStrings[i] baseURL:url];
+                [cell addSubview:webView];
+            }
+            [tableView reloadData];
+        });
+    });
 }
 
 -(UIColor*) getColor:(NSIndexPath*) indexPath up:(BOOL) lUp

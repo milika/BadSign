@@ -112,3 +112,51 @@ This keeps the app binary small while still shipping all content offline.
 Open `Bad Sign.xcodeproj` in Xcode, select a device or simulator, and run. No external dependencies beyond what is in the repository.
 
 > **Note:** The Flurry analytics session key is present in the source but the integration is commented out. Re-enable it in `AppDelegate.m` if analytics are needed.
+
+---
+
+## Bug Fixes & Investigations
+
+### UI freeze when choosing birthdate (`dateChanged:` firing continuously)
+
+**Symptom:** Scrolling the date picker wheel caused the app to freeze and eventually be killed by the OS watchdog (exit code 9 / SIGKILL). Debug log showed multiple rapid `** calculateSigns` calls and a dozen WebContent processes launching in parallel (~1s each).
+
+**Root cause:** `UIDatePicker` fires `UIControlEventValueChanged` on every wheel tick. Each event immediately called `updateStats` → `calculateSigns`, which performed 24 synchronous LZMA extractions and created 12 new `WKWebView` instances on the main thread. With rapid scrolling, calls piled up before the previous one finished, saturating the main thread and triggering the watchdog.
+
+**Fix (`AppDelegate.m`):** Debounced `dateChanged:` with an `NSTimer`. The date label is updated immediately on every tick (keeps UI responsive), but `updateStats` / `calculateSigns` is only invoked 0.5 s after the *last* tick — i.e. once the user stops spinning the wheel.
+
+```objc
+// AppDelegate.h — added ivar:
+NSTimer * datePickerTimer;
+
+// AppDelegate.m — dateChanged: now debounces the heavy work:
+[datePickerTimer invalidate];
+datePickerTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                                  target:self
+                                                selector:@selector(updateStats)
+                                                userInfo:nil
+                                                 repeats:NO];
+```
+
+---
+
+### UI freeze at app startup (`calculateSigns:` blocking main thread)
+
+**Symptom:** App appeared to hang for several seconds immediately after launch before the table became interactive. The same symptom occurred after each date change once the picker debounce was in place.
+
+**Root cause:** `calculateSigns:` ran 24 synchronous LZMA decompressions (12 PNG + 12 HTML extracted from `arch.7z`) sequentially on the **main thread**, then constructed 12 `WKWebView` instances — all before returning. The entire operation took several seconds, during which the run loop was blocked.
+
+**Fix (`ViewController.m`):** Refactored `calculateSigns:` into three phases:
+
+1. **Phase 1 — main thread, instant:** Calculate all 12 sign indices using the pure-math `Signs` methods. Store results in `signIndices` array.
+2. **Phase 2 — background thread (`DISPATCH_QUEUE_PRIORITY_DEFAULT`):** Run all 24 LZMA extractions (`getPng7z:` / `getHtml7z:`) off-thread. Main thread is freed immediately.
+3. **Phase 3 — main thread (inner `dispatch_async`):** Create `WKWebView` instances, load HTML strings, update `horData`, call `reloadData`. All UIKit work safely back on the main thread.
+
+```objc
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    // extract all 12 HTML + PNG files ...
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // update cells and reload table ...
+    });
+});
+```
