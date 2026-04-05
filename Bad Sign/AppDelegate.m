@@ -578,7 +578,14 @@ UITapGestureRecognizer * backTap;
     df.dateStyle = NSDateFormatterLongStyle;
     dateLabel.text = [NSString stringWithFormat:@"%@ %@",
                       [df stringFromDate:datePicker.date],sufix];
-    [self updateStats];
+    // Debounce: cancel any pending update and reschedule.
+    // This prevents calculateSigns from being called on every wheel tick.
+    [datePickerTimer invalidate];
+    datePickerTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                                      target:self
+                                                    selector:@selector(updateStats)
+                                                    userInfo:nil
+                                                     repeats:NO];
 }
 
 /*

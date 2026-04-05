@@ -45,6 +45,8 @@
     int uses_count;
     
     double screenWidth;
+    
+    NSTimer * datePickerTimer;
 }
 
 @property (strong, nonatomic) UIWindow *window;
