@@ -395,6 +395,8 @@ float wSolst (float ys, float chTZ)
     PE = .00134 * fncs(22518.7541 * t + 153);
     PE = PE + .00154 * fncs(45037.5082 * t + 217) + .002 * fncs(32964.3577 * t + 313) + .00178 * fnsn(20.2 * t + 231);
     DT = 1;
+    int wSolst_iter = 0;
+    NSLog(@"[DIAG] wSolst enter ys=%.0f t=%.6f", ys, t);
     while (fabsf(DT * 36525) > .001) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
@@ -403,8 +405,14 @@ float wSolst (float ys, float chTZ)
         L = fnnm(L);
         DT = (fnnm(LO - L + 180) - 180) / 36525;
         t = t + DT;
+        wSolst_iter++;
+        if (wSolst_iter > 1000) {
+            NSLog(@"[DIAG] wSolst LOOP LIMIT ys=%.0f iter=%d DT*36525=%f L=%f", ys, wSolst_iter, DT*36525, L);
+            break;
+        }
     } // LOOP WHILE ABS(DT * 36525) > .001
     chJD = t * 36525 + 2415020 - (.41 + 1.2053 * t + .4992 * t * t) / 1440 - chTZ / 24;
+    NSLog(@"[DIAG] wSolst exit iter=%d chJD=%.1f result=%.1f", wSolst_iter, chJD, floor(chJD + .5));
     return floor(chJD + .5);
 }
 
@@ -418,6 +426,8 @@ float solTerm (float y, float chTZ, float LO) {
     PE = .00134 * fncs(22518.7541 * t + 153);
     PE = PE + .00154 * fncs(45037.5082 * t + 217) + .002 * fncs(32964.3577 * t + 313) + .00178 * fnsn(20.2 * t + 231);
     DT = 1;
+    int solTerm_iter = 0;
+    NSLog(@"[DIAG] solTerm enter y=%.0f LO=%.0f t=%.6f", y, LO, t);
     while (fabsf(DT * 36525) > .001) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
@@ -426,8 +436,14 @@ float solTerm (float y, float chTZ, float LO) {
         L = fnnm(L);
         DT = (fnnm(LO - L + 180) - 180) / 36525;
         t = t + DT;
+        solTerm_iter++;
+        if (solTerm_iter > 1000) {
+            NSLog(@"[DIAG] solTerm LOOP LIMIT y=%.0f LO=%.0f iter=%d DT*36525=%f L=%f", y, LO, solTerm_iter, DT*36525, L);
+            break;
+        }
     } // LOOP WHILE ABS(DT * 36525) > .001
     chJD = t * 36525 + 2415020 - (.41 + 1.2053 * t + .4992 * t * t) / 1440 - chTZ / 24;
+    NSLog(@"[DIAG] solTerm exit iter=%d chJD=%.1f result=%.1f", solTerm_iter, chJD, floor(chJD + .5));
     return floor(chJD + .5);
 }
 
@@ -437,6 +453,8 @@ float nextNewMoon (float j1, float chTZ) {
     k = (j1 - 2415020.759) / 29.53058868;
     k = floor(k) - 1;
     jdNo = 0;
+    int nnm_iter = 0;
+    NSLog(@"[DIAG] nextNewMoon enter j1=%.1f k=%.0f", j1, k);
     while (jdNo <= j1){
         m = fnnm(359.22 + 29.10535608 * k);
         mp = fnnm(306.03 + 385.8169181 * k + .01073 * t * t + .00001236 * t * t * t);
@@ -457,7 +475,13 @@ float nextNewMoon (float j1, float chTZ) {
         jdNo = floor(jdNo + .5);
         
         k = k + 1;
+        nnm_iter++;
+        if (nnm_iter > 10000) {
+            NSLog(@"[DIAG] nextNewMoon LOOP LIMIT j1=%.1f iter=%d jdNo=%.1f k=%.0f", j1, nnm_iter, jdNo, k);
+            break;
+        }
     } // LOOP UNTIL jdNo > j1
+    NSLog(@"[DIAG] nextNewMoon exit iter=%d jdNo=%.1f", nnm_iter, jdNo);
     return jdNo;
 }
 

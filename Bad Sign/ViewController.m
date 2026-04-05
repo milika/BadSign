@@ -593,27 +593,32 @@ int old_rowSelected;
             return;
     
     NSLog(@"** calculateSigns");
+    NSDate *_diagStart = [NSDate date];
+#define DIAG_LOG(label, val) NSLog(@"[DIAG] %@ %i (%.3fs)", label, val, -[_diagStart timeIntervalSinceNow])
     
     [self closeCells];
+    NSLog(@"[DIAG] closeCells done (%.3fs)", -[_diagStart timeIntervalSinceNow]);
     
     last_birthday = birthday;
 
     Signs * signs = [[Signs alloc] initWithDate:birthday];
+    NSLog(@"[DIAG] Signs alloc done (%.3fs)", -[_diagStart timeIntervalSinceNow]);
 
     // Phase 1: calculate all sign indices (fast math, no I/O - stays on main thread)
     int bs_calc = 0;
-    int s0  = [signs westernSign];    NSLog(@"westernSign %i",   s0);  bs_calc += s0;
-    int s1  = [signs chineseSign];    NSLog(@"chineseSign %i",   s1);  bs_calc += s1;
-    int s2  = [signs aztecSign];      NSLog(@"aztecSign %i",     s2);  bs_calc += s2;
-    int s3  = [signs mayanSign];      NSLog(@"mayanSign %i",     s3);  bs_calc += s3;
-    int s4  = [signs egyptianSign];   NSLog(@"egyptianSign %i",  s4);  bs_calc += s4;
-    int s5  = [signs zoroastoSign];   NSLog(@"zoroastoSign %i",  s5);  bs_calc += s5;
-    int s6  = [signs celticSign];     NSLog(@"celticSign %i",    s6);  bs_calc += s6;
-    int s7  = [signs norseSign];      NSLog(@"norseSign %i",     s7);  bs_calc += s7;
-    int s8  = [signs slavicSign];     NSLog(@"slavicSign %i",    s8);  bs_calc += s8;
-    int s9  = [signs numerologySign]; NSLog(@"numerologySign %i",s9);  bs_calc += s9;
-    int s10 = [signs geekSign];       NSLog(@"geekSign %i",      s10); bs_calc += s10;
-    int s11 = bs_calc % 12;           NSLog(@"badSign %i",       s11);
+    int s0  = [signs westernSign];    DIAG_LOG(@"westernSign",   s0);  bs_calc += s0;
+    int s1  = [signs chineseSign];    DIAG_LOG(@"chineseSign",   s1);  bs_calc += s1;
+    int s2  = [signs aztecSign];      DIAG_LOG(@"aztecSign",     s2);  bs_calc += s2;
+    int s3  = [signs mayanSign];      DIAG_LOG(@"mayanSign",     s3);  bs_calc += s3;
+    int s4  = [signs egyptianSign];   DIAG_LOG(@"egyptianSign",  s4);  bs_calc += s4;
+    int s5  = [signs zoroastoSign];   DIAG_LOG(@"zoroastoSign",  s5);  bs_calc += s5;
+    int s6  = [signs celticSign];     DIAG_LOG(@"celticSign",    s6);  bs_calc += s6;
+    int s7  = [signs norseSign];      DIAG_LOG(@"norseSign",     s7);  bs_calc += s7;
+    int s8  = [signs slavicSign];     DIAG_LOG(@"slavicSign",    s8);  bs_calc += s8;
+    int s9  = [signs numerologySign]; DIAG_LOG(@"numerologySign",s9);  bs_calc += s9;
+    int s10 = [signs geekSign];       DIAG_LOG(@"geekSign",      s10); bs_calc += s10;
+    int s11 = bs_calc % 12;           DIAG_LOG(@"badSign",       s11);
+#undef DIAG_LOG
 
     NSArray<NSNumber*> *signIndices = @[@(s0),@(s1),@(s2),@(s3),@(s4),@(s5),
                                         @(s6),@(s7),@(s8),@(s9),@(s10),@(s11)];
@@ -622,7 +627,10 @@ int old_rowSelected;
     NSMutableArray *secNumArr = [horData objectAtIndex:0];
 
     // Phase 2: heavy LZMA extraction on a background thread so the main thread stays free
+    NSLog(@"[DIAG] dispatching background LZMA work");
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSDate *_bg = [NSDate date];
+        NSLog(@"[DIAG] background thread started");
 
         NSMutableArray<NSString*> *htmlStrings = [NSMutableArray arrayWithCapacity:12];
 
@@ -637,10 +645,13 @@ int old_rowSelected;
                                                        withString:@"<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' />"];
             }
             [htmlStrings addObject:(html != nil ? html : @"")];
+            NSLog(@"[DIAG] LZMA %i done (%.3fs)", i, -[_bg timeIntervalSinceNow]);
         }
 
+        NSLog(@"[DIAG] all LZMA done (%.3fs), dispatching to main", -[_bg timeIntervalSinceNow]);
         // Phase 3: all UIKit work back on the main thread
         dispatch_async(dispatch_get_main_queue(), ^{
+            NSLog(@"[DIAG] Phase 3 main thread start");
             for (int i = 0; i < 12; i++) {
                 int idx = [signIndices[i] intValue];
                 [secNumArr replaceObjectAtIndex:i withObject:@(idx)];
@@ -651,6 +662,7 @@ int old_rowSelected;
                 [webView loadHTMLString:htmlStrings[i] baseURL:url];
                 [cell addSubview:webView];
             }
+            NSLog(@"[DIAG] Phase 3 reloadData");
             [tableView reloadData];
         });
     });
