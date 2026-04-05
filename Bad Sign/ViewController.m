@@ -895,11 +895,30 @@ int old_rowSelected;
 
             // Create the WebView on demand if not yet present
             if (webView == nil) {
-                NSURL *url = [[NSBundle mainBundle] bundleURL];
-                NSString *html = [[htmlData objectAtIndex:secSelected] objectAtIndex:rowSelected];
-                webView = [self defWV];
-                [webView loadHTMLString:html baseURL:url];
-                [cell addSubview:webView];
+                // Try to use a pre-warmed webview for instant display.
+                WKWebView *prewarmed = nil;
+                if (rowSelected < (int)[preloadedWebViews count]) {
+                    id obj = [preloadedWebViews objectAtIndex:rowSelected];
+                    if (obj != [NSNull null]) prewarmed = (WKWebView *)obj;
+                }
+
+                if (prewarmed) {
+                    // Move out of the off-screen container into the cell.
+                    [prewarmed removeFromSuperview];
+                    prewarmed.tag = 1001;
+                    CGFloat knownHeight = prewarmed.frame.size.height;
+                    prewarmed.frame = CGRectMake(0, 0, screenWidth, MAX(knownHeight, 50.0));
+                    [cell addSubview:prewarmed];
+                    webView = prewarmed;
+                    [preloadedWebViews replaceObjectAtIndex:rowSelected withObject:[NSNull null]];
+                } else {
+                    // Fallback: load on demand.
+                    NSURL *url = [[NSBundle mainBundle] bundleURL];
+                    NSString *html = [[htmlData objectAtIndex:secSelected] objectAtIndex:rowSelected];
+                    webView = [self defWV];
+                    [webView loadHTMLString:html baseURL:url];
+                    [cell addSubview:webView];
+                }
             }
 
             UIView * socialView = [cell viewWithTag:1007];
