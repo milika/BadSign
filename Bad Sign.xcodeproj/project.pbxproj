@@ -975,7 +975,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Bad Sign";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Bad\\ Sign/Flurry";
 				MARKETING_VERSION = 2.0;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "voidsoftware.com.Bad-Sign.nl";
@@ -1007,7 +1006,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Bad Sign";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/Bad\\ Sign/Flurry";
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "voidsoftware.com.Bad-Sign.nl";
 				PRODUCT_NAME = "$(TARGET_NAME)";

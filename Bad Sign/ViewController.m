@@ -13,7 +13,7 @@
 
 
 #import "LZMAExtractor.h"
-// #import "Flurry.h"
+
 
 #import <QuartzCore/QuartzCore.h>
 
@@ -257,7 +257,7 @@ int old_rowSelected;
         
       //  NSString *shareString = @"I am reading about the %@ in "%@" using Bad Sing app...just found out that I was born in is using Bad Sing...";
         // UIImage *shareImage = titleImg; // [UIImage imageNamed:@"aquarius.png"];
-        NSURL *shareUrl = [NSURL URLWithString:@"https://itunes.apple.com/us/app/bad-sign/id912176242?ls=1&mt=8"];
+        NSURL *shareUrl = [NSURL URLWithString:kAppStoreURL];
         
         NSArray *activityItems = [NSArray arrayWithObjects:shareString, imageUrl, shareUrl, nil];
         
@@ -278,7 +278,6 @@ int old_rowSelected;
              
              if ( done )
              {
-                 // [Flurry logEvent:[NSString stringWithFormat:@"Shared - %@",act]];
              }
              else
              {

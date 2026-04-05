@@ -9,6 +9,10 @@
 #import <UIKit/UIKit.h>
 #import "ViewController.h"
 
+static NSString * const kAppStoreID      = @"912176242";
+#define kAppStoreURL     ([@"https://itunes.apple.com/us/app/bad-sign/id" stringByAppendingString:kAppStoreID])
+#define kAppStoreRateURL ([@"itms-apps://itunes.apple.com/app/id" stringByAppendingString:kAppStoreID])
+
 
 
 

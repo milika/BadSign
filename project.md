@@ -2,8 +2,6 @@
 
 An iOS app built in Objective-C by **Void Software** that calculates a user's astrological signs across 12 different cultural and esoteric traditions based on a single birthdate input.
 
-Available on the App Store: https://itunes.apple.com/us/app/bad-sign/id912176242
-
 ---
 
 ## Overview
@@ -100,8 +98,6 @@ This keeps the app binary small while still shipping all content offline.
 | Platform | iOS (armv7, portrait only) |
 | Build System | Xcode (`.xcodeproj`) |
 | Compression | LZMA SDK (7-Zip, C) via `LZMAExtractor` ObjC wrapper |
-| Analytics | Flurry SDK (integrated but currently disabled/commented out) |
-| Fonts | Custom `Helvetica.ttf` (Helvetica Neue LT Com) |
 | Persistence | `NSUserDefaults` (birthday, usage count) |
 | Sharing | `UIActivityViewController` with JPEG screenshot + App Store URL |
 
@@ -110,8 +106,6 @@ This keeps the app binary small while still shipping all content offline.
 ## Build & Run
 
 Open `Bad Sign.xcodeproj` in Xcode, select a device or simulator, and run. No external dependencies beyond what is in the repository.
-
-> **Note:** The Flurry analytics session key is present in the source but the integration is commented out. Re-enable it in `AppDelegate.m` if analytics are needed.
 
 ---
 
@@ -159,4 +153,43 @@ dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         // update cells and reload table ...
     });
 });
+```
+
+---
+
+### WKWebView memory bloat (12 simultaneous WebContent processes)
+
+**Symptom:** Each time `calculateSigns:` ran, up to 12 `WKWebView` instances were created and retained indefinitely. Each spawns its own `WebContent` process, pushing total memory well above the watchdog limit. OS killed the app with exit code 9.
+
+**Fix (`ViewController.m`):**
+- Switched to **lazy loading**: `WKWebView` instances are created only when a row is expanded (tapped), not upfront.
+- HTML strings are stored in `htmlData` array on background thread; the web view is built and loaded only in `tableView:heightForRowAtIndexPath:` / `tableView:cellForRowAtIndexPath:` when that cell first becomes visible.
+- When a different row is expanded, the old `WKWebView` is removed from its parent cell with `[wv removeFromSuperview]`, terminating its `WebContent` process. At most 1 web process is alive at a time.
+- Content heights are cached in `webHeights` (per sign) so `tableView:heightForRowAtIndexPath:` does not re-load HTML on every layout pass.
+
+---
+
+### Signs 1–11 rendering with small fonts (viewport scaling issue)
+
+**Symptom:** After tapping any sign other than Western Astrology (sign 0), the expanded HTML detail panel showed very small text compared to the first sign.
+
+**Root cause investigation:** Added `[VIEWPORT]` diagnostic logs that print each sign's `<meta>` tag on extraction. Logs revealed:
+- Sign 0: already had a correct `width=device-width` viewport tag in the HTML file.
+- Signs 1–10: had **no `<meta>` tag at all** — `WKWebView` fell back to the default 980 px desktop viewport and scaled the content down to fit the screen.
+- Sign 11: had an incomplete `<meta name="viewport" content="user-scalable=no">` with no width declaration.
+
+**Fix (`ViewController.m`):** After extracting each HTML string, inject the viewport meta tag if `width=device-width` is not already present:
+- If the HTML contains `<head>` (or `<HEAD>`), insert the tag immediately after it.
+- Otherwise prepend the tag to the whole string.
+
+```objc
+NSString *viewportMeta = @"<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' />";
+if (![html containsString:@"width=device-width"]) {
+    if ([html containsString:@"<head>"])
+        html = [html stringByReplacingOccurrencesOfString:@"<head>"
+                     withString:[NSString stringWithFormat:@"<head>%@", viewportMeta]];
+    else
+        html = [viewportMeta stringByAppendingString:html];
+}
+```
 ```

@@ -9,7 +9,7 @@
 #import "AppDelegate.h"
 #import "ViewController.h"
 #import "Signs.h"
-// #import "Flurry.h"
+
 
 
 
@@ -250,11 +250,6 @@ UITapGestureRecognizer * backTap;
     [navController setNavigationBarHidden:NO];
     [self.window makeKeyAndVisible];
     
-    // Flurry
-    // [Flurry setCrashReportingEnabled:YES];
-    // [Flurry startSession:@"PRFD8CQNGJWJCFVMHHHV"];
-    // [Flurry setDebugLogEnabled:YES];
-    
     // rate count
     uses_count = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@"uses_count"];
     NSLog(@"uses_count %i",uses_count);
@@ -318,7 +313,7 @@ UITapGestureRecognizer * backTap;
     
     NSString *shareString = @"Check out all Your signs using Bad Sing app...";
     
-    NSURL *shareUrl = [NSURL URLWithString:@"https://itunes.apple.com/us/app/bad-sign/id912176242?ls=1&mt=8"];
+    NSURL *shareUrl = [NSURL URLWithString:kAppStoreURL];
     
     NSArray *activityItems = [NSArray arrayWithObjects:shareString, imageUrl, shareUrl, nil];
     
@@ -331,7 +326,7 @@ UITapGestureRecognizer * backTap;
      {
      if ( done )
      {
-     //[Flurry logEvent:[NSString stringWithFormat:@"Shared Main - %@",act]];
+
      }
      else
      {
@@ -646,23 +641,19 @@ UITapGestureRecognizer * backTap;
         viewController.view.userInteractionEnabled = YES;
         backTap.enabled = NO;
         
-        // [Flurry logEvent:@"New date chosen"];
-        
         // count used times
         uses_count++;
         
-#define YOUR_APP_STORE_ID 912176242 //Change this one to your ID
         if (uses_count > 4)
         {
             uses_count = -99;
             
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Rate Bad Sing"
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Rate Bad Sign"
                                                                            message:@"Please rate our app, ratings are the only way we can interact with users and we depend on them greatly..."
                                                                     preferredStyle:UIAlertControllerStyleAlert];
             [alert addAction:[UIAlertAction actionWithTitle:@"Noooo" style:UIAlertActionStyleCancel handler:nil]];
             [alert addAction:[UIAlertAction actionWithTitle:@"Rate App" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-                NSString *storeURLFormat = @"itms-apps://itunes.apple.com/app/id%d";
-                NSURL *theUrl = [NSURL URLWithString:[NSString stringWithFormat:storeURLFormat, YOUR_APP_STORE_ID]];
+                NSURL *theUrl = [NSURL URLWithString:kAppStoreRateURL];
                 [[UIApplication sharedApplication] openURL:theUrl options:@{} completionHandler:nil];
             }]];
             [navController presentViewController:alert animated:YES completion:nil];
