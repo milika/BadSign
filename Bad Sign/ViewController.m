@@ -334,7 +334,11 @@ int old_rowSelected;
     [voidView setCenter:CGPointMake(screenWidth-40.0, 26.5)];
     [socialBandView addSubview:voidView];
 
-    
+    socialBandView.userInteractionEnabled = YES;
+    UITapGestureRecognizer *socialTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(socialBandTap:)];
+    socialTap.numberOfTapsRequired = 1;
+    [socialBandView addGestureRecognizer:socialTap];
+
     return socialBandView;
 }
 
