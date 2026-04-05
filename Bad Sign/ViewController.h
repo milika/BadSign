@@ -34,6 +34,10 @@
     // Cached content heights for each sign's web cell
     NSMutableArray * webHeights;
     
+    // HTML content preloaded into off-screen WKWebViews so tapping is instant
+    NSMutableArray * preloadedWebViews; // 12 WKWebView*, NSNull if not ready
+    UIView         * preloadContainer;  // off-screen host for pre-warmed webviews
+
     NSDate * last_birthday;
     
     UITableView* tw;

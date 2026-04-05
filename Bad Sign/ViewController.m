@@ -92,30 +92,120 @@ int old_rowSelected;
 
 - (NSString*) getHtml7z:(NSString*) fileName
 {
-    // Files are bundled directly — no decompression needed
     NSString *name = [fileName stringByDeletingPathExtension];
+    NSLog(@"[HTML] looking for resource name='%@' type='html' inDirectory='SignAssets'", name);
+
     NSString *path = [[NSBundle mainBundle] pathForResource:name ofType:@"html"
                                                inDirectory:@"SignAssets"];
-    if (!path) return nil;
+    NSLog(@"[HTML] pathForResource result: %@", path ? path : @"(nil)");
+
+    if (!path) {
+        // Fallback: try direct path inside bundle
+        NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+        NSString *directPath = [[[bundlePath stringByAppendingPathComponent:@"SignAssets"]
+                                  stringByAppendingPathComponent:name]
+                                 stringByAppendingPathExtension:@"html"];
+        NSLog(@"[HTML] trying direct path: %@", directPath);
+        BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:directPath];
+        NSLog(@"[HTML] direct path exists: %@", exists ? @"YES" : @"NO");
+
+        // Also log what's actually in SignAssets if we can find it
+        NSString *signAssetsDir = [[NSBundle mainBundle] bundlePath];
+        signAssetsDir = [signAssetsDir stringByAppendingPathComponent:@"SignAssets"];
+        BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:signAssetsDir];
+        NSLog(@"[HTML] SignAssets dir exists in bundle: %@", dirExists ? @"YES" : @"NO");
+        if (dirExists) {
+            NSArray *contents = [[NSFileManager defaultManager]
+                                 contentsOfDirectoryAtPath:signAssetsDir error:nil];
+            NSLog(@"[HTML] SignAssets contents (%lu files): %@", (unsigned long)[contents count],
+                  [[contents subarrayWithRange:NSMakeRange(0, MIN(5, [contents count]))] componentsJoinedByString:@", "]);
+        } else {
+            NSLog(@"[HTML] SignAssets NOT found — folder may not be added to Xcode target");
+        }
+
+        if (exists) {
+            path = directPath;
+        } else {
+            return nil;
+        }
+    }
+
     NSData *data = [NSData dataWithContentsOfFile:path];
+    NSLog(@"[HTML] read %lu bytes", (unsigned long)[data length]);
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
 - (void) getPng7z:(NSString*) fileName out:(NSString*) fileNameOut
 {
-    // Files are bundled directly — just copy to tmp so existing image-loading code works
     NSString *srcName  = [NSString stringWithFormat:@"%@@2x", fileName];
+    NSLog(@"[PNG] looking for resource name='%@' type='png' inDirectory='SignAssets'", srcName);
+
     NSString *bundlePath = [[NSBundle mainBundle] pathForResource:srcName ofType:@"png"
                                                      inDirectory:@"SignAssets"];
-    if (!bundlePath) return;
+    NSLog(@"[PNG] pathForResource result: %@", bundlePath ? bundlePath : @"(nil)");
+
+    if (!bundlePath) {
+        // Fallback: try direct path
+        NSString *directPath = [[[[NSBundle mainBundle] bundlePath]
+                                   stringByAppendingPathComponent:@"SignAssets"]
+                                  stringByAppendingPathComponent:[NSString stringWithFormat:@"%@@2x.png", fileName]];
+        NSLog(@"[PNG] trying direct path: %@", directPath);
+        if ([[NSFileManager defaultManager] fileExistsAtPath:directPath]) {
+            bundlePath = directPath;
+        } else {
+            NSLog(@"[PNG] not found anywhere, skipping");
+            return;
+        }
+    }
 
     NSString *destPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
                           [NSString stringWithFormat:@"%@@2x.png", fileNameOut]];
     NSFileManager *fm = [NSFileManager defaultManager];
     if ([fm fileExistsAtPath:destPath]) [fm removeItemAtPath:destPath error:nil];
-    [fm copyItemAtPath:bundlePath toPath:destPath error:nil];
+    NSError *copyErr = nil;
+    [fm copyItemAtPath:bundlePath toPath:destPath error:&copyErr];
+    if (copyErr) NSLog(@"[PNG] copy error: %@", copyErr);
+    else NSLog(@"[PNG] copied to %@", destPath);
 }
 
+
+// Preload all 12 sign HTML pages into off-screen WKWebViews so the first tap is instant.
+- (void)preloadAllWebViews
+{
+    // Create (or reuse) an off-screen container that is never visible to the user.
+    if (!preloadContainer) {
+        preloadContainer = [[UIView alloc] initWithFrame:CGRectMake(-screenWidth * 3, 0, screenWidth, 1)];
+        preloadContainer.userInteractionEnabled = NO;
+        preloadContainer.clipsToBounds = YES;
+        [self.view addSubview:preloadContainer];
+    }
+    // Remove any webviews from a previous date selection.
+    for (UIView *v in [preloadContainer.subviews copy]) [v removeFromSuperview];
+    [preloadedWebViews removeAllObjects];
+
+    NSURL *baseURL  = [[NSBundle mainBundle] bundleURL];
+    NSMutableArray *secHtmlArr = [htmlData objectAtIndex:0];
+
+    for (int i = 0; i < 12; i++) {
+        NSString *html = [secHtmlArr objectAtIndex:i];
+        if (!html || [html length] == 0) {
+            [preloadedWebViews addObject:[NSNull null]];
+            continue;
+        }
+        WKWebView *wv = [self defWV];
+        // Lay them out vertically inside the off-screen container so each
+        // has a real frame and WKWebView actually renders.
+        wv.frame = CGRectMake(0, i * 2000, screenWidth, 50);
+        wv.tag = 2000 + i;   // distinct from 1001 used by the expanded cell
+        [preloadContainer addSubview:wv];
+        [wv loadHTMLString:html baseURL:baseURL];
+        [preloadedWebViews addObject:wv];
+    }
+    // Make the container just tall enough to hold all webviews.
+    CGRect f = preloadContainer.frame;
+    f.size.height = 12 * 2000 + 50;
+    preloadContainer.frame = f;
+}
 
 // create default WebView
 - (WKWebView*) defWV
@@ -526,6 +616,9 @@ int old_rowSelected;
         
         last_birthday = nil;
         
+        preloadedWebViews = [[NSMutableArray alloc] init];
+        preloadContainer  = nil;
+        
         tw = nil;
     }
     return self;
@@ -659,6 +752,8 @@ int old_rowSelected;
             }
             NSLog(@"[DIAG] Phase 3 reloadData");
             [tableView reloadData];
+            // Pre-warm web views so the first tap shows content instantly.
+            [self preloadAllWebViews];
         });
     });
 }
@@ -841,6 +936,25 @@ int old_rowSelected;
 {
     NSString *currentURL = webViewArg.URL.absoluteString;
     if ([currentURL isEqualToString:@"about:blank"]) return;
+
+    // Pre-warmed webview (tag 2000–2011) — just measure and cache the height.
+    if (webViewArg.tag >= 2000 && webViewArg.tag < 2012) {
+        int preloadIdx = (int)webViewArg.tag - 2000;
+        [webViewArg evaluateJavaScript:@"document.body.scrollHeight"
+                     completionHandler:^(id result, NSError *error) {
+            if (error || !result) return;
+            CGFloat height = [result floatValue];
+            if (height <= 0) return;
+            // Store height so heightForRowAtIndexPath returns it immediately on tap.
+            [[webHeights objectAtIndex:0] replaceObjectAtIndex:preloadIdx withObject:@(height)];
+            // Resize the off-screen webview to its natural height.
+            CGRect f   = webViewArg.frame;
+            f.size.height = height;
+            webViewArg.frame = f;
+        }];
+        return;
+    }
+
     if (rowSelected < 0) return;
 
     // Capture row/section at callback time to guard against state change

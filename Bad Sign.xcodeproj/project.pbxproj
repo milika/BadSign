@@ -118,6 +118,7 @@
 		857442B11D9344D300957698 /* 4-10-1.png in Resources */ = {isa = PBXBuildFile; fileRef = 857442651D9344D300957698 /* 4-10-1.png */; };
 		857442B21D9344D300957698 /* 4-11-1.png in Resources */ = {isa = PBXBuildFile; fileRef = 857442661D9344D300957698 /* 4-11-1.png */; };
 		857442B31D9344D300957698 /* 4-l.png in Resources */ = {isa = PBXBuildFile; fileRef = 857442671D9344D300957698 /* 4-l.png */; };
+		AABB11223344556677889902 /* SignAssets in Resources */ = {isa = PBXBuildFile; fileRef = AABB11223344556677889901 /* SignAssets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -249,6 +250,7 @@
 		857442651D9344D300957698 /* 4-10-1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "4-10-1.png"; sourceTree = "<group>"; };
 		857442661D9344D300957698 /* 4-11-1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "4-11-1.png"; sourceTree = "<group>"; };
 		857442671D9344D300957698 /* 4-l.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "4-l.png"; sourceTree = "<group>"; };
+		AABB11223344556677889901 /* SignAssets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SignAssets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -311,6 +313,7 @@
 			isa = PBXGroup;
 			children = (
 				1E6751462AF97B89001399EA /* Bad Sign.entitlements */,
+				AABB11223344556677889901 /* SignAssets */,
 				84C4042A1857E0E600C8F3BA /* Graphics */,
 				84DF4CE1188CBFCC00E52478 /* GraphicsHtml */,
 				844BC8C71854318100FE698A /* AppDelegate.h */,
@@ -651,6 +654,7 @@
 				857442751D9344D300957698 /* 0-6-1.png in Resources */,
 				84D186DC188E1E84007049AA /* 7-l.png in Resources */,
 				84BC12301856977F006368C1 /* Helvetica.ttf in Resources */,
+				AABB11223344556677889902 /* SignAssets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

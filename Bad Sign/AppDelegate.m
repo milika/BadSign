@@ -156,7 +156,17 @@ UITapGestureRecognizer * backTap;
     
     moonView = [[UIImageView alloc] initWithFrame:CGRectMake(screenWidth-(320.0-220.0), 106+4*add_ofset, 68, 68)];
     [statsView addSubview:moonView];
-    
+
+    UILabel *tapToCloseLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, screenWidth, 24)];
+    tapToCloseLabel.text = @"Tap anywhere to close";
+    [tapToCloseLabel setFont:[UIFont fontWithName:@"Helvetica Neue LT Com" size:13.0]];
+    [tapToCloseLabel setTextColor:[UIColor colorWithRed:150.0/255 green:148.0/255 blue:149.0/255 alpha:1.0]];
+    [tapToCloseLabel setTextAlignment:NSTextAlignmentCenter];
+    [tapToCloseLabel setBackgroundColor:[UIColor clearColor]];
+    tapToCloseLabel.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
+    tapToCloseLabel.frame = CGRectMake(0, statsView.frame.size.height - 36, screenWidth, 24);
+    [statsView addSubview:tapToCloseLabel];
+
     // UIImageView * imgView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"top-back.jpg"]];
     // [customTitleView addSubview:imgView];
     
