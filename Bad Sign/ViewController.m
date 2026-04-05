@@ -665,10 +665,24 @@ int old_rowSelected;
             [self getPng7z:[NSString stringWithFormat:@"%i-%i", i, idx]
                        out:[NSString stringWithFormat:@"%i", i]];
             NSString *html = [self getHtml7z:[NSString stringWithFormat:@"%i-%i.html", i, idx]];
-            if (i == 0 && html != nil) {
-                // fix viewport meta for western sign
-                html = [html stringByReplacingOccurrencesOfString:@"<meta content=”width=320; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;”/>"
-                                                       withString:@"<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' />"];
+            if (html != nil) {
+                NSString *viewportMeta = @"<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' />";
+                if ([html containsString:@"width=device-width"]) {
+                    NSLog(@"[VIEWPORT] sign %i: already has device-width viewport, no change needed", i);
+                } else if ([html containsString:@"<head>"]) {
+                    NSLog(@"[VIEWPORT] sign %i: injecting viewport into <head>", i);
+                    html = [html stringByReplacingOccurrencesOfString:@"<head>"
+                                                          withString:[NSString stringWithFormat:@"<head>%@", viewportMeta]];
+                } else if ([html containsString:@"<HEAD>"]) {
+                    NSLog(@"[VIEWPORT] sign %i: injecting viewport into <HEAD>", i);
+                    html = [html stringByReplacingOccurrencesOfString:@"<HEAD>"
+                                                          withString:[NSString stringWithFormat:@"<HEAD>%@", viewportMeta]];
+                } else {
+                    NSLog(@"[VIEWPORT] sign %i: no <head> tag found, prepending viewport", i);
+                    html = [viewportMeta stringByAppendingString:html];
+                }
+            } else {
+                NSLog(@"[VIEWPORT] sign %i: html is nil", i);
             }
             [htmlStrings addObject:(html != nil ? html : @"")];
             NSLog(@"[DIAG] LZMA %i done (%.3fs)", i, -[_bg timeIntervalSinceNow]);

@@ -42,5 +42,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Bad Sign needs access to save your horoscope image to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Bad Sign needs access to your photo library to save your horoscope image.</string>
 </dict>
 </plist>
