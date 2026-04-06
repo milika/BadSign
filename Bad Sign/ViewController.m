@@ -596,8 +596,7 @@ int old_rowSelected;
             
             NSMutableArray * secArr = [tableData objectAtIndex:i];
             for (int a=0; a<[secArr count]; a++) {
-                NSNumber * num = [NSNumber numberWithInt:0];
-                [secNumArr addObject:num];
+                [secNumArr addObject:[NSNull null]]; // unknown until calculateSigns:
                 [secHtmlArr addObject:@""];
                 [secHeightsArr addObject:@(0.0)];
             }
@@ -851,9 +850,10 @@ int old_rowSelected;
     UIImage * img;
     CGSize imgSize;
     if (indexPath.row <= 11) {
-        NSNumber * index = (NSNumber*) [[horData objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+        id indexVal = [[horData objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
         // NSLog(@"setupCell [%i] %i",indexPath.row,[index intValue]);
-        if (index != nil) {
+        if ([indexVal isKindOfClass:[NSNumber class]]) {
+            NSNumber *index = (NSNumber *)indexVal;
             NSString * name = (NSString*) [[[tableSubData objectAtIndex:indexPath.section] objectAtIndex:indexPath.row] objectAtIndex:[index intValue]];
             labMain.text = name;
             // NSLog(@"setupcell [%@]", [NSString stringWithFormat:@"%i-%i",indexPath.row,[index intValue]]);
@@ -863,6 +863,10 @@ int old_rowSelected;
             imgSize = img.size;
             [imgRight setImage:img];
             [imgRight setFrame:CGRectMake(screenWidth-(320.0-258.0)+48.0-imgSize.width, 4.5, imgSize.width, imgSize.height)];
+        } else {
+            // Sign not yet calculated — show blank until calculateSigns: completes
+            labMain.text = @"";
+            [imgRight setImage:nil];
         }
     } else {
         labMain.text = @"AQUARIUS";
