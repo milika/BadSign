@@ -38,6 +38,10 @@
     NSMutableArray * preloadedWebViews; // 12 WKWebView*, NSNull if not ready
     UIView         * preloadContainer;  // off-screen host for pre-warmed webviews
 
+    // Pending sign indices held until all preloads complete before revealing titles
+    NSArray        * pendingSignIndices;
+    int              preloadPendingCount;
+
     NSDate * last_birthday;
     
     UITableView* tw;

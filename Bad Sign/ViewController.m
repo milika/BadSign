@@ -169,6 +169,21 @@ int old_rowSelected;
 }
 
 
+// Called once all preload webviews have finished — updates horData, reloads titles,
+// and re-enables user interaction.
+- (void)revealSignTitles
+{
+    if (pendingSignIndices == nil) return;
+    NSMutableArray *secNumArr = [horData objectAtIndex:0];
+    for (int i = 0; i < 12; i++) {
+        [secNumArr replaceObjectAtIndex:i withObject:pendingSignIndices[i]];
+    }
+    pendingSignIndices = nil;
+    NSLog(@"[DIAG] revealSignTitles — reloadData + enabling interaction");
+    [tableView reloadData];
+    tableView.userInteractionEnabled = YES;
+}
+
 // Preload all 12 sign HTML pages into off-screen WKWebViews so the first tap is instant.
 - (void)preloadAllWebViews
 {
@@ -186,12 +201,14 @@ int old_rowSelected;
     NSURL *baseURL  = [[NSBundle mainBundle] bundleURL];
     NSMutableArray *secHtmlArr = [htmlData objectAtIndex:0];
 
+    preloadPendingCount = 0;
     for (int i = 0; i < 12; i++) {
         NSString *html = [secHtmlArr objectAtIndex:i];
         if (!html || [html length] == 0) {
             [preloadedWebViews addObject:[NSNull null]];
             continue;
         }
+        preloadPendingCount++;
         WKWebView *wv = [self defWV];
         // Lay them out vertically inside the off-screen container so each
         // has a real frame and WKWebView actually renders.
@@ -205,6 +222,11 @@ int old_rowSelected;
     CGRect f = preloadContainer.frame;
     f.size.height = 12 * 2000 + 50;
     preloadContainer.frame = f;
+
+    // Edge case: all HTML was empty — reveal titles immediately.
+    if (preloadPendingCount == 0) {
+        [self revealSignTitles];
+    }
 }
 
 // create default WebView
@@ -216,6 +238,7 @@ int old_rowSelected;
     webView1.userInteractionEnabled = NO;
     webView1.opaque = NO;
     webView1.backgroundColor = [UIColor clearColor];
+    webView1.scrollView.backgroundColor = [UIColor clearColor];
     webView1.hidden = NO;
     // webView1.scalesPageToFit = NO;
 //    [webView1 setDelegate:self];
@@ -571,6 +594,9 @@ int old_rowSelected;
                 [cellWeb addSubview:webView1];
                 */
                 
+                cellWeb.backgroundColor = [UIColor whiteColor];
+                cellWeb.contentView.backgroundColor = [UIColor whiteColor];
+
                 UIView* socialBandView = [self defSV:CGRectMake(0,0, screenWidth, 55.0)];
                 
                 [cellWeb addSubview:socialBandView];
@@ -667,7 +693,18 @@ int old_rowSelected;
     
     [self closeCells];
     NSLog(@"[DIAG] closeCells done (%.3fs)", -[_diagStart timeIntervalSinceNow]);
-    
+
+    // Reset horData to NSNull so old titles are cleared immediately,
+    // whether this is first launch or a date change.
+    NSMutableArray *secNumArr = [horData objectAtIndex:0];
+    for (int i = 0; i < (int)[secNumArr count]; i++) {
+        [secNumArr replaceObjectAtIndex:i withObject:[NSNull null]];
+    }
+    [tableView reloadData];
+
+    // Disable interaction — re-enabled in revealSignTitles once preloads complete
+    tableView.userInteractionEnabled = NO;
+
     last_birthday = birthday;
 
     Signs * signs = [[Signs alloc] initWithDate:birthday];
@@ -691,9 +728,6 @@ int old_rowSelected;
 
     NSArray<NSNumber*> *signIndices = @[@(s0),@(s1),@(s2),@(s3),@(s4),@(s5),
                                         @(s6),@(s7),@(s8),@(s9),@(s10),@(s11)];
-
-    NSURL *url = [[NSBundle mainBundle] bundleURL];
-    NSMutableArray *secNumArr = [horData objectAtIndex:0];
 
     // Phase 2: heavy LZMA extraction on a background thread so the main thread stays free
     NSLog(@"[DIAG] dispatching background LZMA work");
@@ -738,8 +772,6 @@ int old_rowSelected;
             NSMutableArray *secHtmlArr = [htmlData objectAtIndex:0];
             NSMutableArray *secHeightsArr = [webHeights objectAtIndex:0];
             for (int i = 0; i < 12; i++) {
-                int idx = [signIndices[i] intValue];
-                [secNumArr replaceObjectAtIndex:i withObject:@(idx)];
                 // Store HTML for lazy loading — do NOT create WKWebViews here
                 [secHtmlArr replaceObjectAtIndex:i withObject:htmlStrings[i]];
                 // Reset cached height — content is new
@@ -749,9 +781,12 @@ int old_rowSelected;
                 WKWebView *webView = (WKWebView*)[cell viewWithTag:1001];
                 [webView removeFromSuperview];
             }
-            NSLog(@"[DIAG] Phase 3 reloadData");
-            [tableView reloadData];
-            // Pre-warm web views so the first tap shows content instantly.
+            // Hold sign indices — horData stays as NSNull (blank titles) until
+            // all preload webviews have finished loading.
+            pendingSignIndices = signIndices;
+            NSLog(@"[DIAG] Phase 3 starting preload (titles revealed after)");
+            // Pre-warm web views; titles + interaction restored in didFinishNavigation
+            // once the last preload completes.
             [self preloadAllWebViews];
         });
     });
@@ -864,8 +899,8 @@ int old_rowSelected;
             [imgRight setImage:img];
             [imgRight setFrame:CGRectMake(screenWidth-(320.0-258.0)+48.0-imgSize.width, 4.5, imgSize.width, imgSize.height)];
         } else {
-            // Sign not yet calculated — show blank until calculateSigns: completes
-            labMain.text = @"";
+            // Sign not yet calculated — show placeholder until calculateSigns: completes
+            labMain.text = @"...";
             [imgRight setImage:nil];
         }
     } else {
@@ -912,14 +947,21 @@ int old_rowSelected;
                     prewarmed.tag = 1001;
                     CGFloat knownHeight = prewarmed.frame.size.height;
                     prewarmed.frame = CGRectMake(0, 0, screenWidth, MAX(knownHeight, 50.0));
+                    prewarmed.alpha = 0;
                     [cell addSubview:prewarmed];
                     webView = prewarmed;
                     [preloadedWebViews replaceObjectAtIndex:rowSelected withObject:[NSNull null]];
+                    // Fade in after the insert animation completes to avoid black flash.
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
+                                   dispatch_get_main_queue(), ^{
+                        [UIView animateWithDuration:0.2 animations:^{ prewarmed.alpha = 1.0; }];
+                    });
                 } else {
-                    // Fallback: load on demand.
+                    // Fallback: load on demand — fade in from didFinishNavigation.
                     NSURL *url = [[NSBundle mainBundle] bundleURL];
                     NSString *html = [[htmlData objectAtIndex:secSelected] objectAtIndex:rowSelected];
                     webView = [self defWV];
+                    webView.alpha = 0;
                     [webView loadHTMLString:html baseURL:url];
                     [cell addSubview:webView];
                 }
@@ -965,15 +1007,23 @@ int old_rowSelected;
         int preloadIdx = (int)webViewArg.tag - 2000;
         [webViewArg evaluateJavaScript:@"document.body.scrollHeight"
                      completionHandler:^(id result, NSError *error) {
-            if (error || !result) return;
-            CGFloat height = [result floatValue];
-            if (height <= 0) return;
-            // Store height so heightForRowAtIndexPath returns it immediately on tap.
-            [[webHeights objectAtIndex:0] replaceObjectAtIndex:preloadIdx withObject:@(height)];
-            // Resize the off-screen webview to its natural height.
-            CGRect f   = webViewArg.frame;
-            f.size.height = height;
-            webViewArg.frame = f;
+            if (!error && result) {
+                CGFloat height = [result floatValue];
+                if (height > 0) {
+                    // Store height so heightForRowAtIndexPath returns it immediately on tap.
+                    [[webHeights objectAtIndex:0] replaceObjectAtIndex:preloadIdx withObject:@(height)];
+                    // Resize the off-screen webview to its natural height.
+                    CGRect f   = webViewArg.frame;
+                    f.size.height = height;
+                    webViewArg.frame = f;
+                }
+            }
+            // Count down — reveal titles once all preloads are done.
+            preloadPendingCount--;
+            NSLog(@"[PRELOAD] sign %i done, pending=%i", preloadIdx, preloadPendingCount);
+            if (preloadPendingCount <= 0) {
+                [self revealSignTitles];
+            }
         }];
         return;
     }
@@ -1008,6 +1058,11 @@ int old_rowSelected;
             CGRect sR = socialView.frame;
             sR.origin.y = height;
             socialView.frame = sR;
+        }
+
+        // Fade in the webview now that content is measured (on-demand load case).
+        if (webViewArg.alpha < 1.0) {
+            [UIView animateWithDuration:0.2 animations:^{ webViewArg.alpha = 1.0; }];
         }
 
         // Animate the row height change
