@@ -1163,56 +1163,48 @@ int old_rowSelected;
         
         
     } else {
-        // switch select
-        
-        // delete webview row
-        NSArray * delArr = [NSArray arrayWithObjects:[NSIndexPath indexPathForRow:old_rowSelected+1 inSection:secSelected], nil];
-        [tableViewPar deleteRowsAtIndexPaths:delArr withRowAnimation:UITableViewRowAnimationTop];
-        
-        // Free the previous WKWebView process before opening a new one
+        // switch select — close current row first, then open new one after animation finishes
+        NSArray *delArr = @[[NSIndexPath indexPathForRow:old_rowSelected+1 inSection:secSelected]];
+        [tableViewPar deleteRowsAtIndexPaths:delArr withRowAnimation:UITableViewRowAnimationFade];
+
+        // Mark closed and free the old webview while old_rowSelected is still valid
+        rowSelected = -99;
         [self releaseExpandedWebView];
-        
-        // new select
-        rowSelected = (int)indexPath.row;
-        if ((secSelected == indexPath.section) && (rowSelected > old_rowSelected)) {
-            // adjust for extra cell - webview
-            rowSelected--;
+
+        // Capture destination before secSelected can change
+        int targetRow = (int)indexPath.row;
+        int targetSec = (int)indexPath.section;
+        if ((secSelected == targetSec) && (targetRow > old_rowSelected)) {
+            targetRow--; // adjust for the extra row that just collapsed
         }
-        secSelected = (int)indexPath.section;
-        
-        
-        // insert webview
-        NSArray * insArr = [NSArray arrayWithObjects:[NSIndexPath indexPathForRow:rowSelected+1 inSection:secSelected], nil];
-        [tableViewPar insertRowsAtIndexPaths:insArr withRowAnimation:UITableViewRowAnimationTop];
-        
-        
+
+        [tableViewPar endUpdates];
+
+        // Open the new row after the close animation completes (~0.3 s default)
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.32 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            // Guard: user may have tapped something else during the delay
+            if (rowSelected != -99) return;
+
+            rowSelected = targetRow;
+            secSelected = targetSec;
+
+            [tableViewPar beginUpdates];
+            NSArray *insArr = @[[NSIndexPath indexPathForRow:rowSelected+1 inSection:secSelected]];
+            [tableViewPar insertRowsAtIndexPaths:insArr withRowAnimation:UITableViewRowAnimationFade];
+            [tableViewPar endUpdates];
+
+            [tableViewPar reloadData];
+            [tableViewPar scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:rowSelected inSection:secSelected]
+                                atScrollPosition:UITableViewScrollPositionTop animated:YES];
+        });
+
+        return;
     }
     // NSLog(@"selected out: %i", rowSelected);
     // [tableViewPar reloadData];
     
     [tableViewPar endUpdates];
-    
-    /*
-     // after scroll
-     if (rowSelected < 0) {
-     [CATransaction setCompletionBlock:^{
-     NSLog(@"transfinish2");
-     [tableViewPar reloadData];
-     [tableViewPar scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:old_rowSelected inSection:secSelected] atScrollPosition:UITableViewScrollPositionNone animated:YES];
-     }];
-     } else {
-     [CATransaction setCompletionBlock:^{
-     NSLog(@"transfinish");
-     [tableViewPar reloadData];
-     [tableViewPar scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:rowSelected inSection:secSelected] atScrollPosition:UITableViewScrollPositionTop animated:YES];
-     }];
-     }
-     
-     
-     [CATransaction commit];
-     */
-    
-    //[UIView setAnimationsEnabled:YES];
     
     // after scroll
     if (rowSelected < 0) {
