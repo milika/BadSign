@@ -74,9 +74,9 @@ UITapGestureRecognizer * backTap;
     [labStat1 setBackgroundColor:[UIColor clearColor]];
     [statsView addSubview:labStat1];
     
-    labStat2 = [[UILabel alloc] initWithFrame:CGRectMake(22, 48+add_ofset, screenWidth-22, 24)];
+    labStat2 = [[UILabel alloc] initWithFrame:CGRectMake(22, 48+add_ofset, screenWidth-22, 30)];
     labStat2.text = @"...";
-    [labStat2 setFont:[UIFont fontWithName:@"Helvetica Neue LT Com" size:10.0]];
+    [labStat2 setFont:[UIFont fontWithName:@"Helvetica Neue LT Com" size:15.0]];
     [labStat2 setTextColor:[UIColor colorWithRed:150.0/255 green:148.0/255 blue:149.0/255 alpha:1.0]];
     [labStat2 setTextAlignment:NSTextAlignmentLeft];
     [labStat2 setBackgroundColor:[UIColor clearColor]];
@@ -453,7 +453,7 @@ UITapGestureRecognizer * backTap;
     
     labStat1.text = [NSString stringWithFormat:@"%@", [df stringFromDate:birtday]];
     
-    labStat2.text = [NSString stringWithFormat:@"Time difference from today (%@):", [df stringFromDate: now]];
+    labStat2.text = @"Since your birthday:";  // nicer header
     
     NSDateComponents *components = [[NSCalendar currentCalendar] components:NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear fromDate:birtday toDate:now options:0];
     

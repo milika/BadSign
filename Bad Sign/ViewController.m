@@ -816,7 +816,16 @@ int old_rowSelected;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    // Do any additional setup after loading the view from its nib.
+
+    // Gradient background so overscroll at top matches first sign color
+    // and overscroll at bottom matches last sign color.
+    CAGradientLayer *bg = [CAGradientLayer layer];
+    bg.frame = self.view.bounds;
+    bg.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+    UIColor *topColor    = [tableColorsUp objectAtIndex:0];   // first sign cell top band
+    UIColor *bottomColor = [tableColors   objectAtIndex:[tableColors count] - 1]; // last sign color
+    bg.colors = @[(id)topColor.CGColor, (id)bottomColor.CGColor];
+    [self.view.layer insertSublayer:bg atIndex:0];
 }
 
 - (void)didReceiveMemoryWarning
@@ -918,7 +927,7 @@ int old_rowSelected;
     if (tableView == nil) {
         tableView = tableViewPar;
         tableView.backgroundView = nil;
-        tableView.backgroundColor = backColor;
+        tableView.backgroundColor = [UIColor clearColor];
         [tableView setSeparatorColor:[UIColor whiteColor]];
         tableView.clipsToBounds = YES;
             [tableView setSeparatorInset:UIEdgeInsetsZero];
@@ -1163,43 +1172,26 @@ int old_rowSelected;
         
         
     } else {
-        // switch select — close current row first, then open new one after animation finishes
-        NSArray *delArr = @[[NSIndexPath indexPathForRow:old_rowSelected+1 inSection:secSelected]];
-        [tableViewPar deleteRowsAtIndexPaths:delArr withRowAnimation:UITableViewRowAnimationFade];
+        // switch select — delete old row and insert new row in the same update batch (simultaneous fade)
 
-        // Mark closed and free the old webview while old_rowSelected is still valid
-        rowSelected = -99;
-        [self releaseExpandedWebView];
-
-        // Capture destination before secSelected can change
+        // Capture destination before secSelected changes
         int targetRow = (int)indexPath.row;
         int targetSec = (int)indexPath.section;
         if ((secSelected == targetSec) && (targetRow > old_rowSelected)) {
-            targetRow--; // adjust for the extra row that just collapsed
+            targetRow--; // adjust for the extra web row that is being removed
         }
 
-        [tableViewPar endUpdates];
+        NSArray *delArr = @[[NSIndexPath indexPathForRow:old_rowSelected+1 inSection:secSelected]];
+        [tableViewPar deleteRowsAtIndexPaths:delArr withRowAnimation:UITableViewRowAnimationFade];
 
-        // Open the new row after the close animation completes (~0.3 s default)
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.32 * NSEC_PER_SEC)),
-                       dispatch_get_main_queue(), ^{
-            // Guard: user may have tapped something else during the delay
-            if (rowSelected != -99) return;
+        // Free old webview immediately
+        [self releaseExpandedWebView];
 
-            rowSelected = targetRow;
-            secSelected = targetSec;
+        rowSelected = targetRow;
+        secSelected = targetSec;
 
-            [tableViewPar beginUpdates];
-            NSArray *insArr = @[[NSIndexPath indexPathForRow:rowSelected+1 inSection:secSelected]];
-            [tableViewPar insertRowsAtIndexPaths:insArr withRowAnimation:UITableViewRowAnimationFade];
-            [tableViewPar endUpdates];
-
-            [tableViewPar reloadData];
-            [tableViewPar scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:rowSelected inSection:secSelected]
-                                atScrollPosition:UITableViewScrollPositionTop animated:YES];
-        });
-
-        return;
+        NSArray *insArr = @[[NSIndexPath indexPathForRow:rowSelected+1 inSection:secSelected]];
+        [tableViewPar insertRowsAtIndexPaths:insArr withRowAnimation:UITableViewRowAnimationFade];
     }
     // NSLog(@"selected out: %i", rowSelected);
     // [tableViewPar reloadData];
