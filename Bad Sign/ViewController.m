@@ -48,7 +48,7 @@
 
 
 @interface ViewController ()
-
+@property (nonatomic, strong) CAGradientLayer *bgGradient;
 @end
 
 @implementation ViewController
@@ -821,11 +821,17 @@ int old_rowSelected;
     // and overscroll at bottom matches last sign color.
     CAGradientLayer *bg = [CAGradientLayer layer];
     bg.frame = self.view.bounds;
-    bg.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
     UIColor *topColor    = [tableColorsUp objectAtIndex:0];   // first sign cell top band
     UIColor *bottomColor = [tableColors   objectAtIndex:[tableColors count] - 1]; // last sign color
     bg.colors = @[(id)topColor.CGColor, (id)bottomColor.CGColor];
     [self.view.layer insertSublayer:bg atIndex:0];
+    self.bgGradient = bg;
+}
+
+- (void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+    self.bgGradient.frame = self.view.bounds;
 }
 
 - (void)didReceiveMemoryWarning
@@ -1006,10 +1012,29 @@ int old_rowSelected;
     
     return cell;
 }
+- (void)injectFontIntoWebView:(WKWebView *)webViewArg
+{
+    NSString *fontPath = [[NSBundle mainBundle] pathForResource:@"Helvetica" ofType:@"ttf"];
+    if (!fontPath) return;
+    NSData *fontData = [NSData dataWithContentsOfFile:fontPath];
+    if (!fontData) return;
+    NSString *base64Font = [fontData base64EncodedStringWithOptions:0];
+    NSString *css = [NSString stringWithFormat:
+        @"@font-face { font-family: 'Helvetica Neue LT Com'; src: url('data:font/truetype;base64,%@') format('truetype'); }"
+        " body { font-family: 'Helvetica Neue LT Com', Helvetica, sans-serif !important; }",
+        base64Font];
+    NSString *js = [NSString stringWithFormat:
+        @"(function(){ var s=document.createElement('style'); s.innerHTML='%@'; document.head.appendChild(s); })();",
+        [css stringByReplacingOccurrencesOfString:@"'" withString:@"\\'"]];
+    [webViewArg evaluateJavaScript:js completionHandler:nil];
+}
+
 - (void)webView:(WKWebView *)webViewArg didFinishNavigation:(null_unspecified WKNavigation *)navigation
 {
     NSString *currentURL = webViewArg.URL.absoluteString;
     if ([currentURL isEqualToString:@"about:blank"]) return;
+
+    [self injectFontIntoWebView:webViewArg];
 
     // Pre-warmed webview (tag 2000–2011) — just measure and cache the height.
     if (webViewArg.tag >= 2000 && webViewArg.tag < 2012) {
