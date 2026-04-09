@@ -236,9 +236,10 @@ int old_rowSelected;
     webView1.autoresizingMask = 0; // UIViewAutoresizingFlexible ; // |UIViewAutoresizingFlexibleWidth;
     webView1.tag = 1001;
     webView1.userInteractionEnabled = NO;
-    webView1.opaque = NO;
-    webView1.backgroundColor = [UIColor clearColor];
-    webView1.scrollView.backgroundColor = [UIColor clearColor];
+    UIColor *htmlBg = [UIColor colorWithRed:240.0/255 green:240.0/255 blue:237.0/255 alpha:1.0];
+    webView1.opaque = YES;
+    webView1.backgroundColor = htmlBg;
+    webView1.scrollView.backgroundColor = htmlBg;
     webView1.hidden = NO;
     // webView1.scalesPageToFit = NO;
 //    [webView1 setDelegate:self];
@@ -358,8 +359,8 @@ int old_rowSelected;
     __block UIImage *titleImg = nil;
     dispatch_block_t block = ^{
         NSIndexPath * indexPath = [NSIndexPath indexPathForRow:bandIndex inSection:0];
-        [tableView scrollToRowAtIndexPath:indexPath atScrollPosition:UITableViewScrollPositionTop animated:NO];
-        UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+        [self->tableView scrollToRowAtIndexPath:indexPath atScrollPosition:UITableViewScrollPositionTop animated:NO];
+        UITableViewCell *cell = [self->tableView cellForRowAtIndexPath:indexPath];
         titleImg = [self imageOfView:cell];
     };
     if ([NSThread isMainThread]) {
@@ -594,8 +595,9 @@ int old_rowSelected;
                 [cellWeb addSubview:webView1];
                 */
                 
-                cellWeb.backgroundColor = [UIColor whiteColor];
-                cellWeb.contentView.backgroundColor = [UIColor whiteColor];
+                UIColor *htmlBg = [UIColor colorWithRed:240.0/255 green:240.0/255 blue:237.0/255 alpha:1.0];
+                cellWeb.backgroundColor = htmlBg;
+                cellWeb.contentView.backgroundColor = htmlBg;
 
                 UIView* socialBandView = [self defSV:CGRectMake(0,0, screenWidth, 55.0)];
                 
@@ -769,21 +771,21 @@ int old_rowSelected;
         // Phase 3: all UIKit work back on the main thread
         dispatch_async(dispatch_get_main_queue(), ^{
             NSLog(@"[DIAG] Phase 3 main thread start");
-            NSMutableArray *secHtmlArr = [htmlData objectAtIndex:0];
-            NSMutableArray *secHeightsArr = [webHeights objectAtIndex:0];
+            NSMutableArray *secHtmlArr = [self->htmlData objectAtIndex:0];
+            NSMutableArray *secHeightsArr = [self->webHeights objectAtIndex:0];
             for (int i = 0; i < 12; i++) {
                 // Store HTML for lazy loading — do NOT create WKWebViews here
                 [secHtmlArr replaceObjectAtIndex:i withObject:htmlStrings[i]];
                 // Reset cached height — content is new
                 [secHeightsArr replaceObjectAtIndex:i withObject:@(0.0)];
                 // Remove any previously loaded WebView to free its process
-                UITableViewCell *cell = [[webViews objectAtIndex:0] objectAtIndex:i];
+                UITableViewCell *cell = [[self->webViews objectAtIndex:0] objectAtIndex:i];
                 WKWebView *webView = (WKWebView*)[cell viewWithTag:1001];
                 [webView removeFromSuperview];
             }
             // Hold sign indices — horData stays as NSNull (blank titles) until
             // all preload webviews have finished loading.
-            pendingSignIndices = signIndices;
+            self->pendingSignIndices = signIndices;
             NSLog(@"[DIAG] Phase 3 starting preload (titles revealed after)");
             // Pre-warm web views; titles + interaction restored in didFinishNavigation
             // once the last preload completes.
@@ -1045,7 +1047,7 @@ int old_rowSelected;
                 CGFloat height = [result floatValue];
                 if (height > 0) {
                     // Store height so heightForRowAtIndexPath returns it immediately on tap.
-                    [[webHeights objectAtIndex:0] replaceObjectAtIndex:preloadIdx withObject:@(height)];
+                    [[self->webHeights objectAtIndex:0] replaceObjectAtIndex:preloadIdx withObject:@(height)];
                     // Resize the off-screen webview to its natural height.
                     CGRect f   = webViewArg.frame;
                     f.size.height = height;
@@ -1053,9 +1055,9 @@ int old_rowSelected;
                 }
             }
             // Count down — reveal titles once all preloads are done.
-            preloadPendingCount--;
-            NSLog(@"[PRELOAD] sign %i done, pending=%i", preloadIdx, preloadPendingCount);
-            if (preloadPendingCount <= 0) {
+            self->preloadPendingCount--;
+            NSLog(@"[PRELOAD] sign %i done, pending=%i", preloadIdx, self->preloadPendingCount);
+            if (self->preloadPendingCount <= 0) {
                 [self revealSignTitles];
             }
         }];
@@ -1078,7 +1080,7 @@ int old_rowSelected;
         if (rowSelected != capturedRow || secSelected != capturedSec) return;
 
         // Cache the height
-        [[webHeights objectAtIndex:capturedSec] replaceObjectAtIndex:capturedRow withObject:@(height)];
+        [[self->webHeights objectAtIndex:capturedSec] replaceObjectAtIndex:capturedRow withObject:@(height)];
 
         // Resize the webView
         CGRect frame = webViewArg.frame;
@@ -1086,7 +1088,7 @@ int old_rowSelected;
         [webViewArg setFrame:frame];
 
         // Move the social band to sit below the content
-        UITableViewCell *webCell = [[webViews objectAtIndex:capturedSec] objectAtIndex:capturedRow];
+        UITableViewCell *webCell = [[self->webViews objectAtIndex:capturedSec] objectAtIndex:capturedRow];
         UIView *socialView = [webCell viewWithTag:1007];
         if (socialView) {
             CGRect sR = socialView.frame;
@@ -1100,9 +1102,9 @@ int old_rowSelected;
         }
 
         // Animate the row height change
-        if (tableView) {
-            [tableView beginUpdates];
-            [tableView endUpdates];
+        if (self->tableView) {
+            [self->tableView beginUpdates];
+            [self->tableView endUpdates];
         }
     }];
 }
