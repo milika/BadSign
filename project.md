@@ -44,12 +44,9 @@ Bad Sign/
 ├── AppDelegate.h / .m      — App bootstrap, date picker UI, stats bar, share sheet
 ├── ViewController.h / .m   — Main UITableView, expandable rows, WKWebView sign details
 ├── Signs.h / .m            — Pure calculation class for all 12 astrology algorithms
-├── LZMASDK/                — 7z decompression library (C + ObjC wrapper)
-│   └── LZMAExtractor.h/m   — Extracts HTML + PNG assets from arch.7z at runtime
 ├── Images.xcassets/        — App icon, launch image, share button icons
 ├── Moon.xcassets/          — 8 moon phase images (moon0–moon7)
 ├── Bad Sign/               — Runtime asset images (N-M-0.png naming scheme)
-├── arch.7z                 — Bundled archive: HTML descriptions + sign images
 ├── Helvetica.ttf           — Custom font (Helvetica Neue LT Com)
 ├── Launch Screen.storyboard
 └── ViewController.xib      — Main view layout
@@ -75,17 +72,6 @@ Bad Sign/
 - Persists the birthday in `NSUserDefaults` under the key `"birtday"`
 - Implements share via `UIActivityViewController` — renders the full screen to a JPEG and shares with a textual invite and App Store URL
 
----
-
-## Data / Asset Pipeline
-
-Sign descriptions and sign images are stored in a single **`arch.7z`** archive bundled inside the app. At runtime:
-
-1. `LZMAExtractor` (wrapping the 7z LZMA SDK in C) extracts the requested file to the temporary directory.
-2. HTML files are read into memory and injected into `WKWebView` via `-loadHTMLString:baseURL:`.
-3. PNG images are loaded with `+[UIImage imageWithContentsOfFile:]`.
-
-This keeps the app binary small while still shipping all content offline.
 
 ---
 
@@ -97,7 +83,6 @@ This keeps the app binary small while still shipping all content offline.
 | UI Framework | UIKit, WebKit (`WKWebView`) |
 | Platform | iOS (armv7, portrait only) |
 | Build System | Xcode (`.xcodeproj`) |
-| Compression | LZMA SDK (7-Zip, C) via `LZMAExtractor` ObjC wrapper |
 | Persistence | `NSUserDefaults` (birthday, usage count) |
 | Sharing | `UIActivityViewController` with JPEG screenshot + App Store URL |
 
@@ -111,13 +96,6 @@ Open `Bad Sign.xcodeproj` in Xcode, select a device or simulator, and run. No ex
 
 ## Bug Fixes & Investigations
 
-### UI freeze when choosing birthdate (`dateChanged:` firing continuously)
-
-**Symptom:** Scrolling the date picker wheel caused the app to freeze and eventually be killed by the OS watchdog (exit code 9 / SIGKILL). Debug log showed multiple rapid `** calculateSigns` calls and a dozen WebContent processes launching in parallel (~1s each).
-
-**Root cause:** `UIDatePicker` fires `UIControlEventValueChanged` on every wheel tick. Each event immediately called `updateStats` → `calculateSigns`, which performed 24 synchronous LZMA extractions and created 12 new `WKWebView` instances on the main thread. With rapid scrolling, calls piled up before the previous one finished, saturating the main thread and triggering the watchdog.
-
-**Fix (`AppDelegate.m`):** Debounced `dateChanged:` with an `NSTimer`. The date label is updated immediately on every tick (keeps UI responsive), but `updateStats` / `calculateSigns` is only invoked 0.5 s after the *last* tick — i.e. once the user stops spinning the wheel.
 
 ```objc
 // AppDelegate.h — added ivar:
@@ -134,17 +112,6 @@ datePickerTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
 
 ---
 
-### UI freeze at app startup (`calculateSigns:` blocking main thread)
-
-**Symptom:** App appeared to hang for several seconds immediately after launch before the table became interactive. The same symptom occurred after each date change once the picker debounce was in place.
-
-**Root cause:** `calculateSigns:` ran 24 synchronous LZMA decompressions (12 PNG + 12 HTML extracted from `arch.7z`) sequentially on the **main thread**, then constructed 12 `WKWebView` instances — all before returning. The entire operation took several seconds, during which the run loop was blocked.
-
-**Fix (`ViewController.m`):** Refactored `calculateSigns:` into three phases:
-
-1. **Phase 1 — main thread, instant:** Calculate all 12 sign indices using the pure-math `Signs` methods. Store results in `signIndices` array.
-2. **Phase 2 — background thread (`DISPATCH_QUEUE_PRIORITY_DEFAULT`):** Run all 24 LZMA extractions (`getPng7z:` / `getHtml7z:`) off-thread. Main thread is freed immediately.
-3. **Phase 3 — main thread (inner `dispatch_async`):** Create `WKWebView` instances, load HTML strings, update `horData`, call `reloadData`. All UIKit work safely back on the main thread.
 
 ```objc
 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
