@@ -1031,6 +1031,18 @@ int old_rowSelected;
     [webViewArg evaluateJavaScript:js completionHandler:nil];
 }
 
+- (void)webView:(WKWebView *)webViewArg
+       decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction
+                       decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler
+{
+    NSString *scheme = navigationAction.request.URL.scheme;
+    if (scheme && [scheme isEqualToString:@"ready"]) {
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    decisionHandler(WKNavigationActionPolicyAllow);
+}
+
 - (void)webView:(WKWebView *)webViewArg didFinishNavigation:(null_unspecified WKNavigation *)navigation
 {
     NSString *currentURL = webViewArg.URL.absoluteString;
@@ -1041,7 +1053,7 @@ int old_rowSelected;
     // Pre-warmed webview (tag 2000–2011) — just measure and cache the height.
     if (webViewArg.tag >= 2000 && webViewArg.tag < 2012) {
         int preloadIdx = (int)webViewArg.tag - 2000;
-        [webViewArg evaluateJavaScript:@"document.body.scrollHeight"
+        [webViewArg evaluateJavaScript:@"document.body.scrollHeight + parseFloat(getComputedStyle(document.body).paddingBottom)"
                      completionHandler:^(id result, NSError *error) {
             if (!error && result) {
                 CGFloat height = [result floatValue];
@@ -1071,7 +1083,7 @@ int old_rowSelected;
     int capturedSec = secSelected;
 
     // Async height — never spins the run loop, preventing UITableView reentrancy
-    [webViewArg evaluateJavaScript:@"document.body.scrollHeight"
+    [webViewArg evaluateJavaScript:@"document.body.scrollHeight + parseFloat(getComputedStyle(document.body).paddingBottom)"
                  completionHandler:^(id result, NSError *error) {
         if (error || !result) return;
         CGFloat height = [result floatValue];
