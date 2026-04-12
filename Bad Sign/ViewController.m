@@ -1053,7 +1053,8 @@ int old_rowSelected;
     // Pre-warmed webview (tag 2000–2011) — just measure and cache the height.
     if (webViewArg.tag >= 2000 && webViewArg.tag < 2012) {
         int preloadIdx = (int)webViewArg.tag - 2000;
-        [webViewArg evaluateJavaScript:@"document.body.scrollHeight + parseFloat(getComputedStyle(document.body).paddingBottom)"
+        NSString *heightJS = @"document.body.scrollHeight";
+        [webViewArg evaluateJavaScript:heightJS
                      completionHandler:^(id result, NSError *error) {
             if (!error && result) {
                 CGFloat height = [result floatValue];
@@ -1072,6 +1073,17 @@ int old_rowSelected;
             if (self->preloadPendingCount <= 0) {
                 [self revealSignTitles];
             }
+            // Re-measure after font finishes loading from data URL (async reflow)
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [webViewArg evaluateJavaScript:heightJS completionHandler:^(id r2, NSError *e2) {
+                    if (e2 || !r2) return;
+                    CGFloat h2 = [r2 floatValue];
+                    CGFloat cached = [[[self->webHeights objectAtIndex:0] objectAtIndex:preloadIdx] floatValue];
+                    if (h2 <= cached) return;
+                    [[self->webHeights objectAtIndex:0] replaceObjectAtIndex:preloadIdx withObject:@(h2)];
+                    CGRect f2 = webViewArg.frame; f2.size.height = h2; webViewArg.frame = f2;
+                }];
+            });
         }];
         return;
     }
@@ -1083,7 +1095,8 @@ int old_rowSelected;
     int capturedSec = secSelected;
 
     // Async height — never spins the run loop, preventing UITableView reentrancy
-    [webViewArg evaluateJavaScript:@"document.body.scrollHeight + parseFloat(getComputedStyle(document.body).paddingBottom)"
+    NSString *heightJS = @"document.body.scrollHeight";
+    [webViewArg evaluateJavaScript:heightJS
                  completionHandler:^(id result, NSError *error) {
         if (error || !result) return;
         CGFloat height = [result floatValue];
@@ -1118,6 +1131,28 @@ int old_rowSelected;
             [self->tableView beginUpdates];
             [self->tableView endUpdates];
         }
+
+        // Re-measure after font finishes loading from data URL (async reflow).
+        // Long paragraphs can grow significantly once the custom font is applied.
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (rowSelected != capturedRow || secSelected != capturedSec) return;
+            [webViewArg evaluateJavaScript:heightJS completionHandler:^(id r2, NSError *e2) {
+                if (e2 || !r2) return;
+                CGFloat h2 = [r2 floatValue];
+                CGFloat cached = [[[self->webHeights objectAtIndex:capturedSec] objectAtIndex:capturedRow] floatValue];
+                if (h2 <= cached) return;
+                if (rowSelected != capturedRow || secSelected != capturedSec) return;
+                [[self->webHeights objectAtIndex:capturedSec] replaceObjectAtIndex:capturedRow withObject:@(h2)];
+                CGRect f2 = webViewArg.frame; f2.size.height = h2; [webViewArg setFrame:f2];
+                UITableViewCell *wCell = [[self->webViews objectAtIndex:capturedSec] objectAtIndex:capturedRow];
+                UIView *sv = [wCell viewWithTag:1007];
+                if (sv) { CGRect sr = sv.frame; sr.origin.y = h2; sv.frame = sr; }
+                if (self->tableView) {
+                    [self->tableView beginUpdates];
+                    [self->tableView endUpdates];
+                }
+            }];
+        });
     }];
 }
 
