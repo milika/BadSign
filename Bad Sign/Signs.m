@@ -372,24 +372,24 @@ void equ2ecl(float ra, float dc, float ob)
 
 #pragma mark Chinese Sign Calculation
 
-float dr;
-float fnnm(float x) {
+double dr;
+double fnnm(double x) {
     return (x - 360 * floor(x/360));
 }
 
 // trig functions in degrees
-float fnsn(float x) {
+double fnsn(double x) {
     return sin(x*dr);
 }
 
-float fncs(float x) {
+double fncs(double x) {
     return cos(x*dr);
 }
 
 
-float wSolst (float ys, float chTZ)
+double wSolst (double ys, double chTZ)
 { //chTZ in hours; + = west
-    float LO,t,PE,L,DT,chJD,m;
+    double LO,t,PE,L,DT,chJD,m;
     LO = 270;
     t = (365.2422 * (1*ys + LO / 360) - 693878.7) / 36525;
     PE = .00134 * fncs(22518.7541 * t + 153);
@@ -397,7 +397,7 @@ float wSolst (float ys, float chTZ)
     DT = 1;
     int wSolst_iter = 0;
     NSLog(@"[DIAG] wSolst enter ys=%.0f t=%.6f", ys, t);
-    while (fabsf(DT * 36525) > .01) {
+    while (fabs(DT * 36525) > .01) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
         L = L + (1.91946 - .004789 * t - .000014 * t * t) * fnsn(m) + (.020094 - .0001 * t) * fnsn(2 * m) + .000293 * fnsn(3 * m);
@@ -416,8 +416,8 @@ float wSolst (float ys, float chTZ)
     return floor(chJD + .5);
 }
 
-float solTerm (float y, float chTZ, float LO) {
-    float ys,t,PE,L,DT,m,chJD;
+double solTerm (double y, double chTZ, double LO) {
+    double ys,t,PE,L,DT,m,chJD;
     if (LO >= 270)
         ys = y - 1;
     else
@@ -428,7 +428,7 @@ float solTerm (float y, float chTZ, float LO) {
     DT = 1;
     int solTerm_iter = 0;
     NSLog(@"[DIAG] solTerm enter y=%.0f LO=%.0f t=%.6f", y, LO, t);
-    while (fabsf(DT * 36525) > .01) {
+    while (fabs(DT * 36525) > .01) {
         L = 279.6967 + 36000.76892 * t + .0003025 * t * t;
         m = 358.476 + 35999.04975 * t - .00015 * t * t - .0000033 * t * t * t;
         L = L + (1.91946 - .004789 * t - .000014 * t * t) * fnsn(m) + (.020094 - .0001 * t) * fnsn(2 * m) + .000293 * fnsn(3 * m);
@@ -447,8 +447,8 @@ float solTerm (float y, float chTZ, float LO) {
     return floor(chJD + .5);
 }
 
-float nextNewMoon (float j1, float chTZ) {
-    float d,t,k,m,mp,F,jdNo;
+double nextNewMoon (double j1, double chTZ) {
+    double d,t,k,m,mp,F,jdNo;
     d = j1 - 2415020; t = d / 36525;
     k = (j1 - 2415020.759) / 29.53058868;
     k = floor(k) - 1;
@@ -504,13 +504,13 @@ float nextNewMoon (float j1, float chTZ) {
      *
      */
     
-    float chTZ;            // Chinese Time Zone -- hours
-    float s1, s2;            // preceding and contained winter solstice jd
-    float solT1, solT2;   // solar terms 1 and 2 - begin and end Aquarius
-    float m1, m2, m3, m12;     // new moons
-    float NY; // Proposed JD of new year
+    double chTZ;            // Chinese Time Zone -- hours
+    double s1, s2;            // preceding and contained winter solstice jd
+    double solT1, solT2;   // solar terms 1 and 2 - begin and end Aquarius
+    double m1, m2, m3, m12;     // new moons
+    double NY; // Proposed JD of new year
     int m,d,y;
-    float cw0, cw1, cw2, cw3;
+    double cw0, cw1, cw2, cw3;
     int c;     // animal number
     
     y = (int)year;
@@ -523,7 +523,7 @@ float nextNewMoon (float j1, float chTZ) {
      */
     
     if (y < 1928)
-        chTZ = -(465+40/60)/60;
+        chTZ = -(465+40.0/60)/60;
     else
         chTZ = -8;
     
@@ -642,54 +642,21 @@ float nextNewMoon (float j1, float chTZ) {
 
 -(int) aztecSign
 {
-    NSCalendar* calendar = [NSCalendar currentCalendar];
-    NSDateComponents* components = [calendar components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay fromDate:now]; // Get necessary date components
-    int day = (int)[components day];
-    int month = (int)[components month];
-    int year = (int)[components year];
-    
-    int num=0;
-    
-    // starting 1900
-    int yrs[] = { 17, 3, 8, 13, 18, 4, 9, 14, 19, 5, 10, 15, 20, 6, 11, 16, 1, 7, 12, 17, 2, 8, 13, 18, 3, 9, 14, 19, 4, 10, 15, 20, 5, 11, 16, 1, 6, 12, 17, 2, 7, 13, 18, 3, 8, 14, 19, 4, 9, 15, 20, 5, 10, 16, 1, 6, 11, 7, 2, 7, 12, 18, 3, 8, 13, 19, 4, 9, 14, 20, 5, 10, 15, 1, 6, 11, 16, 2, 7, 12, 17, 3, 8, 8, 18 };
-    int mnths[] = { 19, 10, 18, 9, 19, 10, 0, 11, 2, 12, 3, 13 };
-    
-    int y_len = sizeof(yrs) / sizeof(yrs[0]);
-    // NSLog(@"y_len %i",y_len);
-    while (year >= (1900+y_len))
-        year -= y_len;
-    while (year < 1900)
-        year += y_len;
-    year -= 1900;
-    // NSLog(@"year %i",year);
-    
-    num += yrs[year];
-    
-    //  NSLog(@"num %i",num);
-    
-    num += mnths[month-1];
-    
-    NSLog(@"num %i",num);
-    
-    num += day;
-    
-    if ((month == 2) && (day == 29))
-        num++;
-    
-    num = num % 20;
-    
-    return num;
+    // The Aztec tonalpohualli runs in step with the Maya tzolk'in: with the
+    // GMT correlation used by mayanSign, 13 Aug 1521 (Julian) is 1 Coatl,
+    // matching Caso's correlation. Both lists start at Crocodile.
+    return [self mayanSign];
 }
 
 #pragma mark Mayan Sign Calculation
-float GREGORIAN_EPOCH = 1721425.5;
-float MAYAN_COUNT_EPOCH = 584282.5;
+double GREGORIAN_EPOCH = 1721425.5;
+double MAYAN_COUNT_EPOCH = 584282.5;
 
 int leap_gregorian(int year) {
     return ((year % 4) == 0) && (!(((year % 100) == 0) && ((year % 400) != 0)));
 }
 
-float gregorian_to_jd(int year,int month,int day) {
+double gregorian_to_jd(int year,int month,int day) {
     return (GREGORIAN_EPOCH - 1) +
     (365 * (year - 1)) +
     floor((year - 1) / 4) +
@@ -700,23 +667,23 @@ float gregorian_to_jd(int year,int month,int day) {
           day);
 }
 
-float mod(float a, float b) {
+double mod(double a, double b) {
     return a - (b * floor(a / b));
 }
-float amod(float a, float b) {
+double amod(double a, double b) {
     return mod(a - 1, b) + 1;
 }
 
-int jd_to_mayan_tzolkin(float jd) {
-    float lcount;
+int jd_to_mayan_tzolkin(double jd) {
+    double lcount;
     
     jd = floor(jd) + 0.5;
     lcount = jd - MAYAN_COUNT_EPOCH;
     return (int) amod(lcount + 20, 20);
 }
 
-int jd_to_mayan_count(float jd) {
-    float d, baktun, katun, tun, uinal, kin;
+int jd_to_mayan_count(double jd) {
+    double d, baktun, katun, tun, uinal, kin;
     
     jd = floor(jd) + 0.5;
     d = jd - MAYAN_COUNT_EPOCH;
@@ -744,7 +711,7 @@ int jd_to_mayan_count(float jd) {
     int sec = 0;
     
     //  Update Julian day
-    float j = gregorian_to_jd(year, mon + 0, mday) +
+    double j = gregorian_to_jd(year, mon + 0, mday) +
     (floor(sec + 60 * (min + 60 * hour) + 0.5) / 86400.0);
     
     return jd_to_mayan_tzolkin(j)-1;
@@ -964,7 +931,7 @@ int jd_to_mayan_count(float jd) {
     if ((month == 12) && (day >= 1) && (day <= 10)) num = 1;
     
     // Kitovas = Perun
-    if ((month == 12) && (day >= 11) && (day <= 23)) num = 1;
+    if ((month == 12) && (day >= 11) && (day <= 23)) num = 11;
     
     // Perun
     if ((month == 12) && (day >= 24)) num = 11;
@@ -972,7 +939,7 @@ int jd_to_mayan_count(float jd) {
     
     // Stirbog
     if ((month == 1) && (day >= 21)) num = 12;
-    if ((month == 2) && (day <= 20)) num = 12;
+    if ((month == 2) && (day <= 21)) num = 12;
     
     // Svarog
     if ((month == 2) && (day >= 22)) num = 13;
@@ -1028,8 +995,11 @@ int jd_to_mayan_count(float jd) {
     } else {
         while (num > 9) {
             nT = num;
-            num = nT % 10;
-            num += lround(floor(num / 10));
+            num = 0;
+            while (nT > 0) {
+                num += nT % 10;
+                nT /= 10;
+            }
             if (num == 11) {
                 num = 0;
             } else if (num == 22) {
@@ -1065,6 +1035,17 @@ int jd_to_mayan_count(float jd) {
     while (num < 0) num += 12; //around
     
     return num;
+}
+
+#pragma mark Bad Sign Calculation
+
+// Sum of all other sign indices, mod 12
+-(int) badSign
+{
+    int sum = [self westernSign] + [self chineseSign] + [self aztecSign] + [self mayanSign]
+            + [self egyptianSign] + [self zoroastoSign] + [self celticSign] + [self norseSign]
+            + [self slavicSign] + [self numerologySign] + [self geekSign];
+    return sum % 12;
 }
 
 @end

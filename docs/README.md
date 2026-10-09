@@ -28,7 +28,7 @@ plus a twelfth, made-up "Bad Sign" derived from the other eleven. App Store id
 | Dependencies | None (no CocoaPods/SPM; Flurry and LZMA SDK were removed in April 2026) |
 | Persistence | `NSUserDefaults` only |
 | Network | None, apart from opening the App Store / Facebook URLs |
-| Tests | One placeholder XCTest that always fails (see known issues) |
+| Tests | 14 XCTest logic tests covering every sign system (`Bad SignTests`) |
 
 ## Source map
 

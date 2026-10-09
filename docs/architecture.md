@@ -49,7 +49,8 @@ App Store URLs are built from `kAppStoreID` in `AppDelegate.h`.
 index into that system's name list (kept in `ViewController`). All methods use
 `[NSCalendar currentCalendar]` date components, so results follow the device's
 calendar and time zone. `-phase` returns the moon's phase as a 0–1 fraction.
-`-moonSign` exists but is not called anywhere. The algorithms are described in
+`-badSign` sums the other eleven, `mod 12`. `-moonSign` exists but is not
+called anywhere. The algorithms are described in
 [sign-systems.md](sign-systems.md).
 
 ## ViewController (`ViewController.m`)
@@ -77,8 +78,7 @@ footer band, `2000+i` pre-loading web views.
 
 1. **Main thread, maths.** Skip if the date is within 30 s of the last one.
    Close any open row, blank all titles (`NSNull` → "..."), disable table
-   interaction, compute the 11 indices with `Signs` and the Bad Sign as
-   `sum % 12`.
+   interaction, compute the 12 indices with `Signs`.
 2. **Background queue, file I/O.** For each row: copy
    `SignAssets/<row>-<idx>@2x.png` to `tmp/<row>@2x.png` (`getPng7z:out:`),
    read `SignAssets/<row>-<idx>.html` (`getHtml7z:`), and add a

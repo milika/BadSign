@@ -713,19 +713,18 @@ int old_rowSelected;
     NSLog(@"[DIAG] Signs alloc done (%.3fs)", -[_diagStart timeIntervalSinceNow]);
 
     // Phase 1: calculate all sign indices (fast math, no I/O - stays on main thread)
-    int bs_calc = 0;
-    int s0  = [signs westernSign];    DIAG_LOG(@"westernSign",   s0);  bs_calc += s0;
-    int s1  = [signs chineseSign];    DIAG_LOG(@"chineseSign",   s1);  bs_calc += s1;
-    int s2  = [signs aztecSign];      DIAG_LOG(@"aztecSign",     s2);  bs_calc += s2;
-    int s3  = [signs mayanSign];      DIAG_LOG(@"mayanSign",     s3);  bs_calc += s3;
-    int s4  = [signs egyptianSign];   DIAG_LOG(@"egyptianSign",  s4);  bs_calc += s4;
-    int s5  = [signs zoroastoSign];   DIAG_LOG(@"zoroastoSign",  s5);  bs_calc += s5;
-    int s6  = [signs celticSign];     DIAG_LOG(@"celticSign",    s6);  bs_calc += s6;
-    int s7  = [signs norseSign];      DIAG_LOG(@"norseSign",     s7);  bs_calc += s7;
-    int s8  = [signs slavicSign];     DIAG_LOG(@"slavicSign",    s8);  bs_calc += s8;
-    int s9  = [signs numerologySign]; DIAG_LOG(@"numerologySign",s9);  bs_calc += s9;
-    int s10 = [signs geekSign];       DIAG_LOG(@"geekSign",      s10); bs_calc += s10;
-    int s11 = bs_calc % 12;           DIAG_LOG(@"badSign",       s11);
+    int s0  = [signs westernSign];    DIAG_LOG(@"westernSign",   s0);
+    int s1  = [signs chineseSign];    DIAG_LOG(@"chineseSign",   s1);
+    int s2  = [signs aztecSign];      DIAG_LOG(@"aztecSign",     s2);
+    int s3  = [signs mayanSign];      DIAG_LOG(@"mayanSign",     s3);
+    int s4  = [signs egyptianSign];   DIAG_LOG(@"egyptianSign",  s4);
+    int s5  = [signs zoroastoSign];   DIAG_LOG(@"zoroastoSign",  s5);
+    int s6  = [signs celticSign];     DIAG_LOG(@"celticSign",    s6);
+    int s7  = [signs norseSign];      DIAG_LOG(@"norseSign",     s7);
+    int s8  = [signs slavicSign];     DIAG_LOG(@"slavicSign",    s8);
+    int s9  = [signs numerologySign]; DIAG_LOG(@"numerologySign",s9);
+    int s10 = [signs geekSign];       DIAG_LOG(@"geekSign",      s10);
+    int s11 = [signs badSign];        DIAG_LOG(@"badSign",       s11);
 #undef DIAG_LOG
 
     NSArray<NSNumber*> *signIndices = @[@(s0),@(s1),@(s2),@(s3),@(s4),@(s5),

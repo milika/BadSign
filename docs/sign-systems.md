@@ -7,8 +7,10 @@ Only the birth **date** is used; the time of day is ignored (a time picker
 existed once and is commented out). Date components come from
 `[NSCalendar currentCalendar]`, so they follow the device's time zone.
 
-Problems found in these algorithms are collected in
-[known-issues.md](known-issues.md#sign-calculations).
+Expected values for every system are pinned down by unit tests in
+`Bad SignTests/Bad_SignTests.m` (reference Chinese New Year dates, the Maya
+Long Count, worked life-path numbers). The calculation fixes of October 2026
+are described in [history.md](history.md#october-2026-calculation-fixes).
 
 ## 0. Western Astrology: `westernSign`
 
@@ -28,17 +30,21 @@ Fixed date ranges.
 Astronomical: finds the date of Chinese New Year for the birth year (second
 new moon after the winter solstice, or the third in a leap-month year,
 checked against the solar terms at 300° and 330°), in China's time zone
-(UTC+8 from 1928, local mean time before). The animal is `(year − 4) mod 12`,
-minus one if the birthday falls before that year's New Year.
+(UTC+8 from 1928, Beijing local mean time UTC+7:45:40 before). The animal
+is `(year − 4) mod 12`, minus one if the birthday falls before that year's
+New Year. Julian Days are `double`s; with `float` the result was a day off
+around some New Years.
 
 Order: 0 Rat, 1 Ox ("Oxen"), 2 Tiger, 3 Rabbit, 4 Dragon, 5 Snake, 6 Horse,
 7 Sheep, 8 Monkey, 9 Rooster, 10 Dog, 11 Pig.
 
 ## 2. Aztec Astrology: `aztecSign`
 
-Table lookup: `(yearOffset[year − 1900] + monthOffset[month] + day) mod 20`,
-with one extra day for 29 February. The year table has 85 entries
-(1900–1984) and dates outside that range are wrapped into it by ±85 years.
+The Aztec *tonalpohualli* and the Maya *tzolk'in* are the same 20-day count,
+so `aztecSign` returns `mayanSign`. This agrees with Caso's correlation
+(13 Aug 1521 Julian, the fall of Tenochtitlan, was 1 Coatl = Snake). Until
+October 2026 this used a 1900–1984 lookup table that was one sign ahead of
+the historical count for most dates and wrong for everyone born after 1984.
 
 Order: 0 Crocodile, 1 Wind, 2 House, 3 Lizard, 4 Snake, 5 Death, 6 Deer,
 7 Rabbit, 8 Water, 9 Dog, 10 Monkey, 11 Grass, 12 Reed, 13 Ocelot, 14 Eagle,
@@ -114,8 +120,8 @@ ranges (e.g. 6–7 Jul) cut into longer ones. Effective result:
 
 | # | God | Dates |
 |---|---|---|
-| 0 | Yarilo | 21 Mar – 20 Apr (also 21 Feb, by fall-through) |
-| 1 | Lada | 21 Apr – 21 May; 1 Dec – 23 Dec |
+| 0 | Yarilo | 21 Mar – 20 Apr |
+| 1 | Lada | 21 Apr – 21 May; 1 Dec – 10 Dec |
 | 2 | Kostroma | 3 Jun – 12 Jun |
 | 3 | Dodola | 22 May – 2 Jun; 13 Jun – 21 Jun |
 | 4 | Veles | 22 Jun – 5 Jul; 8 Jul – 22 Jul |
@@ -125,8 +131,8 @@ ranges (e.g. 6–7 Jul) cut into longer ones. Effective result:
 | 8 | Svarozich | 28 Sep – 15 Oct |
 | 9 | Morena | 16 Oct – 1 Nov |
 | 10 | Semargl | 2 Nov – 8 Nov |
-| 11 | Perun | 9 Sep – 11 Sep; 9 Nov – 30 Nov; 24 Dec – 20 Jan |
-| 12 | Stribog | 21 Jan – 20 Feb |
+| 11 | Perun | 9 Sep – 11 Sep; 9 Nov – 30 Nov; 11 Dec – 20 Jan |
+| 12 | Stribog | 21 Jan – 21 Feb |
 | 13 | Svarog | 22 Feb – 20 Mar |
 | 14 | Vesna | 24 Aug – 8 Sep |
 
@@ -142,8 +148,9 @@ master number. The index mapping is unusual:
 | 1 – 9 | 1 – 9 |
 | 10 | 22 |
 
-The reduction loop has a bug, so most results are wrong; see
-[known-issues.md](known-issues.md#sign-calculations). All names in
+Day 11 or 22 and month 11 count as a whole number rather than their digit
+sum, and the year's digits are added unreduced. 33 is not treated as a master
+number. Example: 1 Jan 1990 → 1 + 1 + (1+9+9+0) = 21 → 3. All names in
 `tableSubData` are just "Number"; the HTML page shows the actual number.
 
 ## 10. Geek Astrology: `geekSign`
@@ -153,7 +160,7 @@ Year only: `(year − 1936) mod 12`.
 Order: 0 Robot, 1 Wizard, 2 Alien, 3 Superhero, 4 Slayer, 5 Pirate,
 6 Daikaiju, 7 Time Traveler, 8 Spy, 9 Astronaut, 10 Samurai, 11 Explorer.
 
-## 11. Bad Sign (computed in `ViewController`)
+## 11. Bad Sign: `badSign`
 
 The app's own invention: the sum of the 11 indices above, `mod 12`. Its
 names are creatures from Serbian folklore (the code comment calls the list

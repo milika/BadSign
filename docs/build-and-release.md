@@ -22,7 +22,7 @@
 | `PRODUCT_BUNDLE_IDENTIFIER` | `voidsoftware.com.Bad-Sign.nl` |
 | `MARKETING_VERSION` | 2.0 |
 | `CURRENT_PROJECT_VERSION` | 18 (bumped by hand for each upload) |
-| `IPHONEOS_DEPLOYMENT_TARGET` | 15.0 (the project-level default is 12.0) |
+| `IPHONEOS_DEPLOYMENT_TARGET` | 15.0 (project default and both targets) |
 | `TARGETED_DEVICE_FAMILY` | 1 (iPhone) |
 | `DEVELOPMENT_TEAM` | `5A4JA438MW` |
 | `CODE_SIGN_ENTITLEMENTS` | `Bad Sign/Bad Sign.entitlements` (iCloud key-value store, unused) |
@@ -49,21 +49,30 @@ xcodebuild -project "Bad Sign.xcodeproj" -scheme "Bad Sign" -configuration Debug
 
 This succeeded on 2026-10-09 with no compiler warnings (only the libpng
 notices described in [assets-and-content.md](assets-and-content.md#build-note)).
+**But the app built this way exits at launch on iOS 27**; see
+[known-issues.md](known-issues.md#blocking).
 
 ## Tests
 
+`Bad SignTests` is a logic-test bundle: it compiles `Signs.m` in directly
+and has no host app, so it does not depend on the app launching. It pins
+the expected sign for each system on reference dates (14 tests).
+
 ```bash
-xcodebuild -project "Bad Sign.xcodeproj" -scheme "Bad Sign" -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath "$HOME/DevTemp/bad sign/derived-data" test
+xcodebuild -project "Bad Sign.xcodeproj" -scheme "Bad Sign" -destination 'platform=iOS Simulator,name=Bad Sign Verify' -derivedDataPath "$HOME/DevTemp/bad sign/derived-data" test
 ```
 
-The only test, `-[Bad_SignTests testExample]`, is the Xcode template's
-`XCTFail`, so the test run currently fails by design. `Signs` is pure date
-maths and is the obvious first thing to cover with real tests (see
-[known-issues.md](known-issues.md)). Replace the destination name with a
-simulator you have (`xcrun simctl list devices available`).
+`Bad Sign Verify` is a simulator made for this project; create it once with
+`xcrun simctl create "Bad Sign Verify" com.apple.CoreSimulator.SimDeviceType.iPhone-17 com.apple.CoreSimulator.SimRuntime.iOS-27-0`
+(or use any simulator from `xcrun simctl list devices available`).
+
+On 2026-10-09 `xcodebuild` printed the results within seconds but did not
+exit afterwards; watch for `Test Suite 'All tests' passed` and stop it.
 
 ## Releasing to TestFlight / App Store
 
+0. Fix the launch crash in [known-issues.md](known-issues.md#blocking)
+   first; a build made with the current SDK does not start.
 1. Bump `CURRENT_PROJECT_VERSION` (and `MARKETING_VERSION` for a new public
    version) in the app target. Past commits do this as "Update project version
    to N".

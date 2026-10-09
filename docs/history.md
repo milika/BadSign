@@ -68,3 +68,22 @@ injection is still required for the other 171.
   longer.
 - The table background became a gradient from the first row's colour to the
   last, so over-scrolling at either end matches the rows.
+
+## October 2026: calculation fixes
+
+Unit tests were added for every sign system, and they exposed these bugs,
+which were then fixed. Comparing old and new results for every day from 1920
+to 2025:
+
+| System | Change | Dates whose result changed |
+|---|---|---|
+| Numerology | The reduction step kept only the last digit (21 → 1 instead of 3); it now adds the digits | 95% |
+| Aztec | The 1900–1984 lookup table (one sign ahead of the historical count, and wrong after 1984) was replaced by the Maya day count, which is the same cycle (owner's choice: historical count) | 87% |
+| Slavic | 21 Feb now Stribog (was Yarilo by fall-through); 11–23 Dec now Perun as the comment intended (was Lada) | 4% |
+| Chinese | Julian Days moved from `float` to `double`; pre-1928 time zone fixed. Each of the 12 changed dates is the eve of a Chinese New Year that the old code switched a day early (e.g. 14 Feb 1991) | 12 days |
+| Bad Sign | Follows from the above (sum of all, mod 12) | 95% |
+
+Other systems are unchanged. The Bad Sign rule moved from `ViewController`
+into `-[Signs badSign]`. The test target became an unhosted logic-test
+bundle, and the project-wide deployment target was raised from 12.0 to 15.0
+(the app already required 15.0; current Xcode refuses 12.0).

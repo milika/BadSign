@@ -25,5 +25,6 @@
 - (int) slavicSign;
 - (int) numerologySign;
 - (int) geekSign;
+- (int) badSign;
 
 @end
