@@ -21,7 +21,7 @@
 |---|---|
 | `PRODUCT_BUNDLE_IDENTIFIER` | `voidsoftware.com.Bad-Sign.nl` |
 | `MARKETING_VERSION` | 2.0 |
-| `CURRENT_PROJECT_VERSION` | 18 (bumped by hand for each upload) |
+| `CURRENT_PROJECT_VERSION` | 19 (set by `scripts/testflight_upload.sh`) |
 | `IPHONEOS_DEPLOYMENT_TARGET` | 15.0 (project default and both targets) |
 | `TARGETED_DEVICE_FAMILY` | 1 (iPhone) |
 | `DEVELOPMENT_TEAM` | `5A4JA438MW` |
@@ -69,11 +69,16 @@ exit afterwards; watch for `Test Suite 'All tests' passed` and stop it.
 
 ## Releasing to TestFlight / App Store
 
-1. Bump `CURRENT_PROJECT_VERSION` (and `MARKETING_VERSION` for a new public
-   version) in the app target. Past commits do this as "Update project version
-   to N".
-2. Archive and upload, either from Xcode (Product → Archive → Distribute) or
-   with the `testflight-upload` skill on this Mac.
+1. Run `scripts/testflight_upload.sh <build>` with a build number higher than
+   any uploaded for this version. It sets `CURRENT_PROJECT_VERSION`, archives
+   Release for generic iOS, and exports with `app-store-connect` / `upload`
+   and automatic signing through the Apple account signed in to Xcode
+   (Settings → Accounts). Output and logs go to `~/DevTemp/bad sign/`
+   (`scratch/testflight/`, `logs/archive-<build>.log`, `logs/upload-<build>.log`).
+   Success ends with "Upload succeeded". Same script as FlashQuiz.
+2. Commit the changed `project.pbxproj` ("Update project version to N").
+   App Store Connect then processes the build for some minutes before
+   TestFlight offers it. Last upload: 2.0 (19) on 2026-10-09.
 3. The App Store id `912176242` (in `AppDelegate.h`) builds the share link and
    the rating link; it does not change between versions.
 

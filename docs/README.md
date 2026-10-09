@@ -24,7 +24,7 @@ plus a twelfth, made-up "Bad Sign" derived from the other eleven. App Store id
 | Minimum iOS | 15.0 (app target) |
 | Devices | iPhone only, portrait only |
 | Bundle id | `voidsoftware.com.Bad-Sign.nl` |
-| Version | 2.0 (build 18) |
+| Version | 2.0 (build 19) |
 | Dependencies | None (no CocoaPods/SPM; Flurry and LZMA SDK were removed in April 2026) |
 | Persistence | `NSUserDefaults` only |
 | Network | None, apart from opening the App Store / Facebook URLs |
@@ -49,6 +49,7 @@ Bad Sign/                       repository root
 │   ├── Helvetica.ttf           "Helvetica Neue LT Com", used by labels and HTML
 │   ├── Bad Sign-Info.plist, Bad Sign.entitlements, Bad Sign-Prefix.pch
 │   └── Flurry/                 empty leftover folder
-├── Bad SignTests/              placeholder XCTest target
+├── Bad SignTests/              XCTest logic tests for Signs
+├── scripts/testflight_upload.sh  archive + upload to TestFlight
 └── docs/                       this folder
 ```
