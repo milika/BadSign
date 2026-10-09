@@ -49,13 +49,11 @@ xcodebuild -project "Bad Sign.xcodeproj" -scheme "Bad Sign" -configuration Debug
 
 This succeeded on 2026-10-09 with no compiler warnings (only the libpng
 notices described in [assets-and-content.md](assets-and-content.md#build-note)).
-**But the app built this way exits at launch on iOS 27**; see
-[known-issues.md](known-issues.md#blocking).
 
 ## Tests
 
 `Bad SignTests` is a logic-test bundle: it compiles `Signs.m` in directly
-and has no host app, so it does not depend on the app launching. It pins
+and has no host app, so it runs without launching the app. It pins
 the expected sign for each system on reference dates (14 tests).
 
 ```bash
@@ -71,8 +69,6 @@ exit afterwards; watch for `Test Suite 'All tests' passed` and stop it.
 
 ## Releasing to TestFlight / App Store
 
-0. Fix the launch crash in [known-issues.md](known-issues.md#blocking)
-   first; a build made with the current SDK does not start.
 1. Bump `CURRENT_PROJECT_VERSION` (and `MARKETING_VERSION` for a new public
    version) in the app target. Past commits do this as "Update project version
    to N".

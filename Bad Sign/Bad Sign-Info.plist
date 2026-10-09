@@ -24,10 +24,31 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Bad Sign needs access to save your horoscope image to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Bad Sign needs access to your photo library to save your horoscope image.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Helvetica.ttf</string>
 	</array>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>Launch Screen.storyboard</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -42,9 +63,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Bad Sign needs access to save your horoscope image to your photo library.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Bad Sign needs access to your photo library to save your horoscope image.</string>
 </dict>
 </plist>

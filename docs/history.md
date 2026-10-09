@@ -87,3 +87,13 @@ Other systems are unchanged. The Bad Sign rule moved from `ViewController`
 into `-[Signs badSign]`. The test target became an unhosted logic-test
 bundle, and the project-wide deployment target was raised from 12.0 to 15.0
 (the app already required 15.0; current Xcode refuses 12.0).
+
+## October 2026: launch on the iOS 27 SDK
+
+Built with Xcode's iOS 27 SDK, the app exited at launch ("UIScene life cycle
+is required for apps built with this SDK"). It now declares a scene in
+Info.plist; a small `SceneDelegate` asks `AppDelegate` to build the window
+in the scene (`setUpWindowInScene:`) and saves the rating counter on
+`sceneWillResignActive:`. The stats panel is now placed directly under the
+date picker; with the scene's safe-area inset the picker had been covering
+the panel's first line.

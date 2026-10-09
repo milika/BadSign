@@ -61,4 +61,16 @@ static NSString * const kAppStoreID      = @"912176242";
 
 -(void) hidePickers;
 
+// Called by SceneDelegate
+-(void) setUpWindowInScene:(UIWindowScene *) scene;
+-(void) saveUsesCount;
+
+@end
+
+
+// Builds the UI through AppDelegate once the scene connects
+@interface SceneDelegate : UIResponder <UIWindowSceneDelegate>
+
+@property (strong, nonatomic) UIWindow *window;
+
 @end

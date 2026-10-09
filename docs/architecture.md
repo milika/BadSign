@@ -5,7 +5,9 @@ navigation and no Auto Layout: views are built in code with fixed frames
 scaled from a 320 pt design (`screenWidth - (320 - x)`).
 
 ```
-main.m ─► AppDelegate ──owns──► UINavigationController ─► ViewController (table)
+main.m ─► AppDelegate ◄── SceneDelegate (scene connects / resigns active)
+              │
+              └──owns──► UINavigationController ─► ViewController (table)
               │                         │
               │ date picker, stats      │ calculateSigns:(NSDate*)
               │ panel, share-all        ▼
@@ -14,7 +16,15 @@ main.m ─► AppDelegate ──owns──► UINavigationController ─► View
 
 ## AppDelegate (`AppDelegate.m`)
 
-Builds the whole UI in `application:didFinishLaunchingWithOptions:`:
+The app uses the UIScene life cycle (required by the iOS 27 SDK), with one
+scene declared in `Bad Sign-Info.plist`. `SceneDelegate` (in
+`AppDelegate.h/.m`) is thin: when the scene connects it calls
+`-[AppDelegate setUpWindowInScene:]`, and on `sceneWillResignActive:` it calls
+`-[AppDelegate saveUsesCount]`. The UI stays owned by `AppDelegate` because
+`ViewController` calls `hidePickers` on it through
+`[[UIApplication sharedApplication] delegate]`.
+
+`setUpWindowInScene:` builds the whole UI:
 
 - the window and a `UINavigationController` whose root is `ViewController`
   (loaded from `ViewController.xib`);
